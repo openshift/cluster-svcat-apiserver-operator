@@ -1,0 +1,27 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: openshift-svcat-apiserver-operator
+  namespace: openshift-svcat-apiserver-operator
+spec:
+  endpoints:
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    interval: 30s
+    metricRelabelings:
+    - action: drop
+      regex: etcd_(debugging|disk|request|server).*
+      sourceLabels:
+      - __name__
+    port: https
+    scheme: https
+    tlsConfig:
+      # TODO where do you mount the service-ca.crt?
+      insecureSkipVerify: true
+      serverName: metrics.openshift-svcat-apiserver-operator.svc
+  jobLabel: component
+  namespaceSelector:
+    matchNames:
+    - openshift-svcat-apiserver-operator
+  selector:
+    matchLabels:
+      app: openshift-svcat-apiserver-operator

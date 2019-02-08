@@ -1,0 +1,11 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: service-catalog-controller-namespace-viewer-binding
+roleRef:
+  kind: ClusterRole
+  name: namespace-viewer
+subjects:
+- kind: ServiceAccount
+  name: service-catalog-controller
+  namespace: kube-service-catalog

@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: openshift-svcat-apiserver-operator
+  name: openshift-svcat-apiserver-operator
+  labels:
+    app: openshift-svcat-apiserver-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: openshift-svcat-apiserver-operator
+  template:
+    metadata:
+      name: openshift-svcat-apiserver-operator
+      labels:
+        app: openshift-svcat-apiserver-operator
+    spec:
+      serviceAccountName: openshift-svcat-apiserver-operator
+      containers:
+      - name: operator
+        image: docker.io/jboyd01/origin-cluster-svcat-apiserver-operator:v4.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8443
+          name: metrics
+          protocol: TCP
+        command: ["cluster-svcat-apiserver-operator", "operator"]
+        args:
+        - "--config=/var/run/configmaps/config/config.yaml"
+        - "-v=5"
+        resources:
+          requests:
+            memory: 50Mi
+        volumeMounts:
+        - mountPath: /var/run/configmaps/config
+          name: config
+        - mountPath: /var/run/secrets/serving-cert
+          name: serving-cert
+        env:
+        - name: IMAGE
+          value: quay.io/openshift/origin-service-catalog:v4.0
+      volumes:
+      - name: serving-cert
+        secret:
+          secretName: openshift-svcat-apiserver-operator-serving-cert
+          optional: true
+      - name: config
+        configMap:
+          name: openshift-svcat-apiserver-operator-config
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
+      tolerations:
+      - operator: Exists

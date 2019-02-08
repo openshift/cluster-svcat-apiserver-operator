@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: kube-service-catalog
+  name: config
+data:
+  config.yaml:

@@ -1,0 +1,12 @@
+kind: ImageStream
+apiVersion: image.openshift.io/v1
+spec:
+  tags:
+  - name: cluster-svcat-apiserver-operator
+    from:
+      kind: DockerImage
+      name: docker.io/openshift/origin-cluster-svcat-apiserver-operator:v4.0
+  - name: service-catalog
+    from:
+      kind: DockerImage
+      name: quay.io/openshift/origin-service-catalog:v4.0

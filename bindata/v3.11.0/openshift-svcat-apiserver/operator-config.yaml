@@ -1,0 +1,14 @@
+apiVersion: operator.openshift.io/v1
+kind: OpenShiftAPIServer
+metadata:
+  name: svcat
+spec:
+  logLevel: "Normal"
+  managementState: Managed
+  observedConfig:
+    imagePolicyConfig:
+      internalRegistryHostname: image-registry.openshift-image-registry.svc:5000
+    routingConfig:
+      subdomain: apps.jaboyd-0208.devcluster.openshift.com
+  operandSpecs: null
+  unsupportedConfigOverrides: null

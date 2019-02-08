@@ -1,0 +1,10 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: servicecatalog-serviceclass-viewer-binding
+roleRef:
+  kind: ClusterRole
+  name: servicecatalog-serviceclass-viewer
+subjects:
+- kind: Group
+  name: system:authenticated

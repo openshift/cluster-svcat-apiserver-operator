@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: openshift-svcat-apiserver-operator
+  name: openshift-svcat-apiserver-operator-config
+data:
+  config.yaml: |
+    apiVersion: operator.openshift.io/v1alpha1
+    kind: GenericOperatorConfig

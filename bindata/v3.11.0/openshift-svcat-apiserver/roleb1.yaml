@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: configmap-accessor-binding
+  namespace: kube-service-catalog
+roleRef:
+  kind: Role
+  name: configmap-accessor
+subjects:
+- kind: ServiceAccount
+  namespace: kube-service-catalog
+  name: service-catalog-controller

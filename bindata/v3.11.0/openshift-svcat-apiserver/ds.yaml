@@ -1,0 +1,97 @@
+apiVersion: "apps/v1"
+kind: DaemonSet
+metadata:
+  labels:
+    app: apiserver
+  name: apiserver
+  namespace: kube-service-catalog
+spec:
+  selector:
+    matchLabels:
+      app: apiserver
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: apiserver
+    spec:
+      serviceAccountName: service-catalog-apiserver
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
+      containers:
+      - args:
+        - apiserver
+        - --storage-type
+        - etcd
+        - --secure-port
+        - "6443"
+        - --etcd-servers
+        - "https://etcd.kube-system.svc.cluster.local:2379"
+        - --etcd-cafile
+        - "/var/run/configmaps/etcd-serving-ca/ca-bundle.crt"
+        - --etcd-certfile
+        - "/var/run/secrets/etcd-client/tls.crt"
+        - --etcd-keyfile
+        - "/var/run/secrets/etcd-client/tls.key"
+        - -v
+        - "9"
+        - --cors-allowed-origins
+        - "localhost"
+        - --enable-admission-plugins
+        - NamespaceLifecycle,DefaultServicePlan,ServiceBindingsLifecycle,ServicePlanChangeValidator,BrokerAuthSarCheck
+        - --feature-gates
+        - OriginatingIdentity=true
+        - --feature-gates
+        - NamespacedServiceBroker=true
+        image: ${IMAGE}
+        imagePullPolicy: IfNotPresent
+        command: ["/usr/bin/service-catalog"]
+        name: apiserver
+        ports:
+        - containerPort: 6443
+          protocol: TCP
+        resources:
+          requests:
+            memory: 200Mi
+        terminationMessagePath: /dev/termination-log
+        volumeMounts:
+        - mountPath: /var/run/kubernetes-service-catalog
+          name: apiserver-ssl
+          readOnly: true
+        - mountPath: /etc/origin/master
+          name: etcd-host-cert
+          readOnly: true
+        - mountPath: /var/run/secrets/etcd-client
+          name: etcd-client
+        - mountPath: /var/run/configmaps/etcd-serving-ca
+          name: etcd-serving-ca
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: apiserver-ssl
+        secret:
+          defaultMode: 420
+          secretName: serving-cert
+          items:
+          - key: tls.crt
+            path: apiserver.crt
+          - key: tls.key
+            path: apiserver.key
+      - hostPath:
+          path: /etc/origin/master
+        name: etcd-host-cert
+      - emptyDir: {}
+        name: data-dir
+      - name: etcd-serving-ca
+        configMap:
+          name: etcd-serving-ca
+      - name: etcd-client
+        secret:
+          secretName: etcd-client
+      tolerations:
+      - operator: Exists
