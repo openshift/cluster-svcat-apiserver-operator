@@ -33,7 +33,6 @@ import (
 
 const (
 	workloadFailingCondition = "WorkloadFailing"
-	imageImportCAName        = "image-import-ca"
 	workQueueKey             = "key"
 )
 
