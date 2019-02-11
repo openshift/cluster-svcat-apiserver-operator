@@ -192,13 +192,13 @@ func TestAvailableStatus(t *testing.T) {
 			expectedFailingMessages: []string{"\"apiservices\": TEST ERROR: fail to create apiservice"},
 
 			apiServiceReactor: func(action kubetesting.Action) (handled bool, ret runtime.Object, err error) {
-				if action.GetVerb() == "get" && action.(kubetesting.GetAction).GetName() == "v1.build.openshift.io" {
-					return true, nil, apierrors.NewNotFound(apiregistrationv1.Resource("apiservices"), "v1.build.openshift.io")
+				if action.GetVerb() == "get" && action.(kubetesting.GetAction).GetName() == "v1beta1.servicecatalog.k8s.io" {
+					return true, nil, apierrors.NewNotFound(apiregistrationv1.Resource("apiservices"), "v1beta1.servicecatalog.k8s.io")
 				}
 				if action.GetVerb() != "create" {
 					return false, nil, nil
 				}
-				if action.(kubetesting.CreateAction).GetObject().(*apiregistrationv1.APIService).Name == "v1.build.openshift.io" {
+				if action.(kubetesting.CreateAction).GetObject().(*apiregistrationv1.APIService).Name == "v1beta1.servicecatalog.k8s.io" {
 					return true, nil, errors.New("TEST ERROR: fail to create apiservice")
 				}
 				return false, nil, nil
@@ -212,7 +212,7 @@ func TestAvailableStatus(t *testing.T) {
 			expectedFailingMessages: []string{"\"apiservices\": TEST ERROR: fail to get apiservice"},
 
 			apiServiceReactor: func(action kubetesting.Action) (handled bool, ret runtime.Object, err error) {
-				if action.GetVerb() == "get" && action.(kubetesting.GetAction).GetName() == "v1.build.openshift.io" {
+				if action.GetVerb() == "get" && action.(kubetesting.GetAction).GetName() == "v1beta1.servicecatalog.k8s.io" {
 					return true, nil, errors.New("TEST ERROR: fail to get apiservice")
 				}
 				return false, nil, nil
@@ -252,12 +252,12 @@ func TestAvailableStatus(t *testing.T) {
 			name:             "APIServiceNotAvailable",
 			expectedStatus:   operatorv1.ConditionFalse,
 			expectedReason:   "APIServiceNotAvailable",
-			expectedMessages: []string{"apiservice/v1.build.openshift.io: not available: TEST MESSAGE"},
+			expectedMessages: []string{"apiservice/v1beta1.servicecatalog.k8s.io: not available: TEST MESSAGE"},
 
 			apiServiceReactor: func(action kubetesting.Action) (handled bool, ret runtime.Object, err error) {
-				if action.GetVerb() == "get" && action.(kubetesting.GetAction).GetName() == "v1.build.openshift.io" {
+				if action.GetVerb() == "get" && action.(kubetesting.GetAction).GetName() == "v1beta1.servicecatalog.k8s.io" {
 					return true, &apiregistrationv1.APIService{
-						ObjectMeta: metav1.ObjectMeta{Name: "v1.build.openshift.io", Annotations: map[string]string{"service.alpha.openshift.io/inject-cabundle": "true"}},
+						ObjectMeta: metav1.ObjectMeta{Name: "v1beta1.servicecatalog.k8s.io", Annotations: map[string]string{"service.alpha.openshift.io/inject-cabundle": "true"}},
 						Spec: apiregistrationv1.APIServiceSpec{
 							Group:                "build.openshift.io",
 							Version:              "v1",
@@ -273,44 +273,6 @@ func TestAvailableStatus(t *testing.T) {
 					}, nil
 				}
 				return false, nil, nil
-			},
-		},
-		{
-			name:           "MultipleAPIServiceNotAvailable",
-			expectedStatus: operatorv1.ConditionFalse,
-			expectedReason: "Multiple",
-			expectedMessages: []string{
-				"apiservice/v1.build.openshift.io: not available: TEST MESSAGE",
-				"apiservice/v1.project.openshift.io: not available: TEST MESSAGE",
-			},
-
-			apiServiceReactor: func(action kubetesting.Action) (handled bool, ret runtime.Object, err error) {
-				if action.GetVerb() != "get" {
-					return false, nil, nil
-				}
-
-				switch action.(kubetesting.GetAction).GetName() {
-				case "v1.build.openshift.io":
-					fallthrough
-				case "v1.project.openshift.io":
-					return true, &apiregistrationv1.APIService{
-						ObjectMeta: metav1.ObjectMeta{Name: action.(kubetesting.GetAction).GetName(), Annotations: map[string]string{"service.alpha.openshift.io/inject-cabundle": "true"}},
-						Spec: apiregistrationv1.APIServiceSpec{
-							Group:                action.GetResource().Group,
-							Version:              action.GetResource().Version,
-							Service:              &apiregistrationv1.ServiceReference{Namespace: operatorclient.TargetNamespaceName, Name: "api"},
-							GroupPriorityMinimum: 9900,
-							VersionPriority:      15,
-						},
-						Status: apiregistrationv1.APIServiceStatus{
-							Conditions: []apiregistrationv1.APIServiceCondition{
-								{Type: apiregistrationv1.Available, Status: apiregistrationv1.ConditionFalse, Message: "TEST MESSAGE"},
-							},
-						},
-					}, nil
-				default:
-					return false, nil, nil
-				}
 			},
 		},
 	}
