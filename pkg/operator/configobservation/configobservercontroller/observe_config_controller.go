@@ -12,7 +12,6 @@ import (
 	configinformers "github.com/openshift/client-go/config/informers/externalversions"
 	operatorv1informers "github.com/openshift/client-go/operator/informers/externalversions"
 	"github.com/openshift/cluster-svcat-apiserver-operator/pkg/operator/configobservation"
-	"github.com/openshift/cluster-svcat-apiserver-operator/pkg/operator/configobservation/images"
 )
 
 type ConfigObserver struct {
@@ -33,18 +32,13 @@ func NewConfigObserver(
 			operatorClient,
 			eventRecorder,
 			configobservation.Listers{
-				ResourceSync:      resourceSyncer,
-				ImageConfigLister: configInformers.Config().V1().Images().Lister(),
-				EndpointsLister:   kubeInformersForEtcdNamespace.Core().V1().Endpoints().Lister(),
-				ImageConfigSynced: configInformers.Config().V1().Images().Informer().HasSynced,
+				ResourceSync:    resourceSyncer,
+				EndpointsLister: kubeInformersForEtcdNamespace.Core().V1().Endpoints().Lister(),
 				PreRunCachesSynced: []cache.InformerSynced{
 					operatorConfigInformers.Operator().V1().OpenShiftAPIServers().Informer().HasSynced,
 					kubeInformersForEtcdNamespace.Core().V1().Endpoints().Informer().HasSynced,
 				},
 			},
-			images.ObserveInternalRegistryHostname,
-			images.ObserveExternalRegistryHostnames,
-			images.ObserveAllowedRegistriesForImport,
 		),
 	}
 	operatorConfigInformers.Operator().V1().OpenShiftAPIServers().Informer().AddEventHandler(c.EventHandler())
