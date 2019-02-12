@@ -151,8 +151,8 @@ func (c *OpenShiftAPIServerOperator) Run(workers int, stopCh <-chan struct{}) {
 	defer utilruntime.HandleCrash()
 	defer c.queue.ShutDown()
 
-	glog.Infof("Starting OpenShiftAPIServerOperator")
-	defer glog.Infof("Shutting down OpenShiftAPIServerOperator")
+	glog.Infof("Starting OpenShiftSvCatAPIServerOperator")
+	defer glog.Infof("Shutting down OpenShiftSvCatAPIServerOperator")
 
 	// doesn't matter what workers say, only start one.
 	go wait.Until(c.runWorker, time.Second, stopCh)
