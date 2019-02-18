@@ -28,7 +28,7 @@ import (
 )
 
 func RunOperator(ctx *controllercmd.ControllerContext) error {
-	kubeClient, err := kubernetes.NewForConfig(ctx.KubeConfig)
+	kubeClient, err := kubernetes.NewForConfig(ctx.ProtoKubeConfig)
 	if err != nil {
 		return err
 	}
@@ -76,7 +76,8 @@ func RunOperator(ctx *controllercmd.ControllerContext) error {
 	resourceSyncController, err := resourcesynccontroller.NewResourceSyncController(
 		operatorClient,
 		kubeInformersForNamespaces,
-		kubeClient,
+		v1helpers.CachedConfigMapGetter(kubeClient.CoreV1(), kubeInformersForNamespaces),
+		v1helpers.CachedSecretGetter(kubeClient.CoreV1(), kubeInformersForNamespaces),
 		ctx.EventRecorder,
 	)
 	if err != nil {
@@ -100,7 +101,7 @@ func RunOperator(ctx *controllercmd.ControllerContext) error {
 	)
 	finalizerController := NewFinalizerController(
 		kubeInformersForNamespaces.InformersFor(operatorclient.TargetNamespaceName),
-		kubeClient,
+		kubeClient.CoreV1(),
 		ctx.EventRecorder,
 	)
 
@@ -131,17 +132,17 @@ func RunOperator(ctx *controllercmd.ControllerContext) error {
 		ctx.EventRecorder,
 	)
 
-	operatorConfigInformers.Start(ctx.StopCh)
-	kubeInformersForNamespaces.Start(ctx.StopCh)
-	apiregistrationInformers.Start(ctx.StopCh)
-	configInformers.Start(ctx.StopCh)
+	operatorConfigInformers.Start(ctx.Done())
+	kubeInformersForNamespaces.Start(ctx.Done())
+	apiregistrationInformers.Start(ctx.Done())
+	configInformers.Start(ctx.Done())
 
-	go workloadController.Run(1, ctx.StopCh)
-	go configObserver.Run(1, ctx.StopCh)
-	go clusterOperatorStatus.Run(1, ctx.StopCh)
-	go finalizerController.Run(1, ctx.StopCh)
-	go resourceSyncController.Run(1, ctx.StopCh)
+	go workloadController.Run(1, ctx.Done())
+	go configObserver.Run(1, ctx.Done())
+	go clusterOperatorStatus.Run(1, ctx.Done())
+	go finalizerController.Run(1, ctx.Done())
+	go resourceSyncController.Run(1, ctx.Done())
 
-	<-ctx.StopCh
+	<-ctx.Done()
 	return fmt.Errorf("stopped")
 }

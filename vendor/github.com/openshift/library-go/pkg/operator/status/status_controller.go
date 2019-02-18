@@ -10,9 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/diff"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/cache"
@@ -23,6 +20,7 @@ import (
 	configv1client "github.com/openshift/client-go/config/clientset/versioned/typed/config/v1"
 	configv1helpers "github.com/openshift/library-go/pkg/config/clusteroperator/v1helpers"
 	"github.com/openshift/library-go/pkg/operator/events"
+	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
 	operatorv1helpers "github.com/openshift/library-go/pkg/operator/v1helpers"
 )
 
@@ -80,9 +78,11 @@ func NewClusterOperatorStatusController(
 func (c StatusSyncer) sync() error {
 	_, currentDetailedStatus, _, err := c.operatorClient.GetOperatorState()
 	if apierrors.IsNotFound(err) {
-		glog.Infof("operator.status not found")
 		c.eventRecorder.Warningf("StatusNotFound", "Unable to determine current operator status for %s", c.clusterOperatorName)
-		return c.clusterOperatorClient.ClusterOperators().Delete(c.clusterOperatorName, nil)
+		if err := c.clusterOperatorClient.ClusterOperators().Delete(c.clusterOperatorName, nil); err != nil && !apierrors.IsNotFound(err) {
+			return err
+		}
+		return nil
 	}
 	if err != nil {
 		return err
@@ -152,12 +152,17 @@ func (c StatusSyncer) sync() error {
 		configv1helpers.RemoveStatusCondition(&clusterOperatorObj.Status.Conditions, configv1.ClusterStatusConditionType(operatorv1.OperatorStatusTypeProgressing))
 	}
 
+	// TODO work out removal.  We don't always know the existing value, so removing early seems like a bad idea.  Perhaps a remove flag.
+	versions := c.versionGetter.GetVersions()
+	for operand, version := range versions {
+		operatorv1helpers.SetOperandVersion(&clusterOperatorObj.Status.Versions, configv1.OperandVersion{Name: operand, Version: version})
+	}
+
 	if equality.Semantic.DeepEqual(clusterOperatorObj, originalClusterOperatorObj) {
 		return nil
 	}
-	originalJSON := runtime.EncodeOrDie(unstructured.UnstructuredJSONScheme, originalClusterOperatorObj)
-	newJSON := runtime.EncodeOrDie(unstructured.UnstructuredJSONScheme, clusterOperatorObj)
-	glog.V(2).Infof("clusteroperator/%s diff %v", c.clusterOperatorName, diff.StringDiff(originalJSON, newJSON))
+
+	glog.V(2).Infof("clusteroperator/%s diff %v", c.clusterOperatorName, resourceapply.JSONPatch(originalClusterOperatorObj, clusterOperatorObj))
 
 	if len(clusterOperatorObj.ResourceVersion) != 0 {
 		if _, updateErr := c.clusterOperatorClient.ClusterOperators().UpdateStatus(clusterOperatorObj); err != nil {
@@ -196,9 +201,9 @@ func (c StatusSyncer) sync() error {
 	}
 
 	// TODO work out removal.  We don't always know the existing value, so removing early seems like a bad idea.  Perhaps a remove flag.
-	versions := c.versionGetter.GetVersions()
+	versions = c.versionGetter.GetVersions()
 	for operand, version := range versions {
-		operatorv1helpers.SetOperandVersion(&clusterOperatorObj.Status.Versions, configv1.OperandVersion{Name: operand, Version: version})
+		operatorv1helpers.SetOperandVersion(&freshOperatorConfig.Status.Versions, configv1.OperandVersion{Name: operand, Version: version})
 	}
 
 	if _, updateErr := c.clusterOperatorClient.ClusterOperators().UpdateStatus(freshOperatorConfig); updateErr != nil {
