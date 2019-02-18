@@ -2,14 +2,15 @@ package operator
 
 import (
 	"fmt"
+	"github.com/golang/glog"
 	"os"
 	"time"
 
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
-	apiregistrationclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
-	apiregistrationinformers "k8s.io/kube-aggregator/pkg/client/informers/externalversions"
+	"github.com/openshift/cluster-svcat-apiserver-operator/pkg/operator/configobservation/configobservercontroller"
+	"github.com/openshift/cluster-svcat-apiserver-operator/pkg/operator/operatorclient"
+	"github.com/openshift/cluster-svcat-apiserver-operator/pkg/operator/resourcesynccontroller"
+	"github.com/openshift/cluster-svcat-apiserver-operator/pkg/operator/v311_00_assets"
+	"github.com/openshift/cluster-svcat-apiserver-operator/pkg/operator/workloadcontroller"
 
 	configv1 "github.com/openshift/api/config/v1"
 	operatorv1 "github.com/openshift/api/operator/v1"
@@ -17,14 +18,17 @@ import (
 	configinformers "github.com/openshift/client-go/config/informers/externalversions"
 	operatorv1client "github.com/openshift/client-go/operator/clientset/versioned"
 	operatorv1informers "github.com/openshift/client-go/operator/informers/externalversions"
-	"github.com/openshift/cluster-svcat-apiserver-operator/pkg/operator/configobservation/configobservercontroller"
-	"github.com/openshift/cluster-svcat-apiserver-operator/pkg/operator/operatorclient"
-	"github.com/openshift/cluster-svcat-apiserver-operator/pkg/operator/resourcesynccontroller"
-	"github.com/openshift/cluster-svcat-apiserver-operator/pkg/operator/v311_00_assets"
-	"github.com/openshift/cluster-svcat-apiserver-operator/pkg/operator/workloadcontroller"
 	"github.com/openshift/library-go/pkg/controller/controllercmd"
 	"github.com/openshift/library-go/pkg/operator/status"
 	"github.com/openshift/library-go/pkg/operator/v1helpers"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
+	apiregistrationclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
+	apiregistrationinformers "k8s.io/kube-aggregator/pkg/client/informers/externalversions"
 )
 
 func RunOperator(ctx *controllercmd.ControllerContext) error {
@@ -86,7 +90,7 @@ func RunOperator(ctx *controllercmd.ControllerContext) error {
 
 	workloadController := workloadcontroller.NewWorkloadController(
 		os.Getenv("IMAGE"),
-		operatorConfigInformers.Operator().V1().OpenShiftAPIServers(),
+		operatorConfigInformers.Operator().V1().ServiceCatalogAPIServers(),
 		kubeInformersForNamespaces.InformersFor(operatorclient.TargetNamespaceName),
 		kubeInformersForNamespaces.InformersFor(operatorclient.EtcdNamespaceName),
 		kubeInformersForNamespaces.InformersFor(operatorclient.KubeAPIServerNamespaceName),
@@ -118,6 +122,7 @@ func RunOperator(ctx *controllercmd.ControllerContext) error {
 		"openshift-svcat-apiserver",
 		append(
 			[]configv1.ObjectReference{
+				//TODO: this should be a service catalog api server config map
 				{Group: "operator.openshift.io", Resource: "openshiftapiservers", Name: "svcat"},
 				{Resource: "namespaces", Name: operatorclient.UserSpecifiedGlobalConfigNamespace},
 				{Resource: "namespaces", Name: operatorclient.MachineSpecifiedGlobalConfigNamespace},
@@ -131,6 +136,24 @@ func RunOperator(ctx *controllercmd.ControllerContext) error {
 		status.NewVersionGetter(),
 		ctx.EventRecorder,
 	)
+
+	// make sure our Operator CR exists before proceeding
+	glog.Info("waiting for `cluster` ServiceCatalogAPIServer resource to exist")
+	err = wait.PollImmediateInfinite(10*time.Second, func() (bool, error) {
+		var err error
+		_, err = operatorConfigClient.OperatorV1().ServiceCatalogAPIServers().Get("cluster", metav1.GetOptions{})
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return false, nil
+			}
+			return false, err
+		}
+		return true, nil
+	})
+	if err != nil {
+		glog.Info("error locating svcat resource: %v", err)
+		return err
+	}
 
 	operatorConfigInformers.Start(ctx.Done())
 	kubeInformersForNamespaces.Start(ctx.Done())

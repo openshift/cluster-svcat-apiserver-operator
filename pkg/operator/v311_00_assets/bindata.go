@@ -558,8 +558,6 @@ spec:
         - "/var/run/secrets/etcd-client/tls.crt"
         - --etcd-keyfile
         - "/var/run/secrets/etcd-client/tls.key"
-        - -v
-        - "9"
         - --cors-allowed-origins
         - "localhost"
         - --enable-admission-plugins
@@ -658,17 +656,13 @@ func v3110OpenshiftSvcatApiserverNsYaml() (*asset, error) {
 var _v3110OpenshiftSvcatApiserverOperatorConfigYaml = []byte(`apiVersion: operator.openshift.io/v1
 kind: OpenShiftAPIServer
 metadata:
-  name: svcat
+  name: cluster
 spec:
   logLevel: "Normal"
   managementState: Managed
-  observedConfig:
-    imagePolicyConfig:
-      internalRegistryHostname: image-registry.openshift-image-registry.svc:5000
-    routingConfig:
-      subdomain: apps.jaboyd-0208.devcluster.openshift.com
   operandSpecs: null
-  unsupportedConfigOverrides: null`)
+  unsupportedConfigOverrides: null
+`)
 
 func v3110OpenshiftSvcatApiserverOperatorConfigYamlBytes() ([]byte, error) {
 	return _v3110OpenshiftSvcatApiserverOperatorConfigYaml, nil
