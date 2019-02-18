@@ -27,7 +27,6 @@ import (
 	configinformers "github.com/openshift/client-go/config/informers/externalversions"
 	operatorv1client "github.com/openshift/client-go/operator/clientset/versioned/typed/operator/v1"
 	operatorv1informers "github.com/openshift/client-go/operator/informers/externalversions/operator/v1"
-	clusteroperatorv1helpers "github.com/openshift/library-go/pkg/config/clusteroperator/v1helpers"
 	"github.com/openshift/library-go/pkg/operator/events"
 )
 
@@ -36,10 +35,10 @@ const (
 	workQueueKey             = "key"
 )
 
-type OpenShiftAPIServerOperator struct {
+type ServiceCatalogAPIServerOperator struct {
 	targetImagePullSpec string
 
-	operatorConfigClient    operatorv1client.OpenShiftAPIServersGetter
+	operatorConfigClient    operatorv1client.ServiceCatalogAPIServersGetter
 	openshiftConfigClient   openshiftconfigclientv1.ConfigV1Interface
 	kubeClient              kubernetes.Interface
 	apiregistrationv1Client apiregistrationv1client.ApiregistrationV1Interface
@@ -53,20 +52,20 @@ type OpenShiftAPIServerOperator struct {
 
 func NewWorkloadController(
 	targetImagePullSpec string,
-	operatorConfigInformer operatorv1informers.OpenShiftAPIServerInformer,
-	kubeInformersForOpenShiftAPIServerNamespace kubeinformers.SharedInformerFactory,
+	operatorConfigInformer operatorv1informers.ServiceCatalogAPIServerInformer,
+	kubeInformersForServiceCatalogAPIServerNamespace kubeinformers.SharedInformerFactory,
 	kubeInformersForEtcdNamespace kubeinformers.SharedInformerFactory,
 	kubeInformersForKubeAPIServerNamespace kubeinformers.SharedInformerFactory,
 	kubeInformersForOpenShiftConfigNamespace kubeinformers.SharedInformerFactory,
 	apiregistrationInformers apiregistrationinformers.SharedInformerFactory,
 	configInformers configinformers.SharedInformerFactory,
-	operatorConfigClient operatorv1client.OpenShiftAPIServersGetter,
+	operatorConfigClient operatorv1client.ServiceCatalogAPIServersGetter,
 	openshiftConfigClient openshiftconfigclientv1.ConfigV1Interface,
 	kubeClient kubernetes.Interface,
 	apiregistrationv1Client apiregistrationv1client.ApiregistrationV1Interface,
 	eventRecorder events.Recorder,
-) *OpenShiftAPIServerOperator {
-	c := &OpenShiftAPIServerOperator{
+) *ServiceCatalogAPIServerOperator {
+	c := &ServiceCatalogAPIServerOperator{
 		targetImagePullSpec:     targetImagePullSpec,
 		operatorConfigClient:    operatorConfigClient,
 		openshiftConfigClient:   openshiftConfigClient,
@@ -74,7 +73,7 @@ func NewWorkloadController(
 		apiregistrationv1Client: apiregistrationv1Client,
 		eventRecorder:           eventRecorder,
 
-		queue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "OpenShiftAPIServerOperator"),
+		queue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "ServiceCatalogAPIServerOperator"),
 
 		rateLimiter: flowcontrol.NewTokenBucketRateLimiter(0.05 /*3 per minute*/, 4),
 	}
@@ -83,22 +82,24 @@ func NewWorkloadController(
 	kubeInformersForEtcdNamespace.Core().V1().ConfigMaps().Informer().AddEventHandler(c.eventHandler())
 	kubeInformersForEtcdNamespace.Core().V1().Secrets().Informer().AddEventHandler(c.eventHandler())
 	kubeInformersForKubeAPIServerNamespace.Core().V1().ConfigMaps().Informer().AddEventHandler(c.eventHandler())
-	kubeInformersForOpenShiftAPIServerNamespace.Core().V1().ConfigMaps().Informer().AddEventHandler(c.eventHandler())
-	kubeInformersForOpenShiftAPIServerNamespace.Core().V1().ServiceAccounts().Informer().AddEventHandler(c.eventHandler())
-	kubeInformersForOpenShiftAPIServerNamespace.Core().V1().Services().Informer().AddEventHandler(c.eventHandler())
-	kubeInformersForOpenShiftAPIServerNamespace.Apps().V1().DaemonSets().Informer().AddEventHandler(c.eventHandler())
+	kubeInformersForServiceCatalogAPIServerNamespace.Core().V1().ConfigMaps().Informer().AddEventHandler(c.eventHandler())
+	kubeInformersForServiceCatalogAPIServerNamespace.Core().V1().ServiceAccounts().Informer().AddEventHandler(c.eventHandler())
+	kubeInformersForServiceCatalogAPIServerNamespace.Core().V1().Services().Informer().AddEventHandler(c.eventHandler())
+	kubeInformersForServiceCatalogAPIServerNamespace.Apps().V1().DaemonSets().Informer().AddEventHandler(c.eventHandler())
 	kubeInformersForOpenShiftConfigNamespace.Core().V1().ConfigMaps().Informer().AddEventHandler(c.eventHandler())
-	configInformers.Config().V1().Images().Informer().AddEventHandler(c.eventHandler())
-	apiregistrationInformers.Apiregistration().V1().APIServices().Informer().AddEventHandler(c.eventHandler())
+
+	// TODO: delete these
+	//configInformers.Config().V1().Images().Informer().AddEventHandler(c.eventHandler())
+	//apiregistrationInformers.Apiregistration().V1().APIServices().Informer().AddEventHandler(c.eventHandler())
 
 	// we only watch some namespaces
-	kubeInformersForOpenShiftAPIServerNamespace.Core().V1().Namespaces().Informer().AddEventHandler(c.namespaceEventHandler())
+	kubeInformersForServiceCatalogAPIServerNamespace.Core().V1().Namespaces().Informer().AddEventHandler(c.namespaceEventHandler())
 
 	return c
 }
 
-func (c OpenShiftAPIServerOperator) sync() error {
-	operatorConfig, err := c.operatorConfigClient.OpenShiftAPIServers().Get("svcat", metav1.GetOptions{})
+func (c ServiceCatalogAPIServerOperator) sync() error {
+	operatorConfig, err := c.operatorConfigClient.ServiceCatalogAPIServers().Get("cluster", metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -114,31 +115,36 @@ func (c OpenShiftAPIServerOperator) sync() error {
 		return nil
 	}
 
-	kubeAPIServerOperator, err := c.openshiftConfigClient.ClusterOperators().Get("kube-apiserver", metav1.GetOptions{})
-	if apierrors.IsNotFound(err) {
-		kubeAPIServerOperator, err = c.openshiftConfigClient.ClusterOperators().Get("openshift-kube-apiserver-operator", metav1.GetOptions{})
-	}
-	if apierrors.IsNotFound(err) {
-		message := "clusteroperator/kube-apiserver not found"
-		c.eventRecorder.Warning("PrereqNotReady", message)
-		return fmt.Errorf(message)
-	}
-	if err != nil {
-		return err
-	}
-	if !clusteroperatorv1helpers.IsStatusConditionTrue(kubeAPIServerOperator.Status.Conditions, "Available") {
-		message := fmt.Sprintf("clusteroperator/%s is not Available", kubeAPIServerOperator.Name)
-		c.eventRecorder.Warning("PrereqNotReady", message)
-		return fmt.Errorf(message)
-	}
+	/*******
+		***  I think all this can be deleted
 
-	// block until config is obvserved
-	if len(operatorConfig.Spec.ObservedConfig.Raw) == 0 {
-		glog.Info("Waiting for observed configuration to be available")
-		return nil
-	}
+		kubeAPIServerOperator, err := c.openshiftConfigClient.ClusterOperators().Get("kube-apiserver", metav1.GetOptions{})
+		if apierrors.IsNotFound(err) {
+			kubeAPIServerOperator, err = c.openshiftConfigClient.ClusterOperators().Get("openshift-kube-apiserver-operator", metav1.GetOptions{})
+		}
+		if apierrors.IsNotFound(err) {
+			message := "clusteroperator/kube-apiserver not found"
+			c.eventRecorder.Warning("PrereqNotReady", message)
+			return fmt.Errorf(message)
+		}
+		if err != nil {
+			return err
+		}
+		if !clusteroperatorv1helpers.IsStatusConditionTrue(kubeAPIServerOperator.Status.Conditions, "Available") {
+			message := fmt.Sprintf("clusteroperator/%s is not Available", kubeAPIServerOperator.Name)
+			c.eventRecorder.Warning("PrereqNotReady", message)
+			return fmt.Errorf(message)
+		}
 
-	forceRequeue, err := syncOpenShiftAPIServer_v311_00_to_latest(c, operatorConfig)
+		// block until config is obvserved
+		if len(operatorConfig.Spec.ObservedConfig.Raw) == 0 {
+			glog.Info("Waiting for observed configuration to be available")
+			return nil
+		}
+
+	     *********/
+
+	forceRequeue, err := syncServiceCatalogAPIServer_v311_00_to_latest(c, operatorConfig)
 	if forceRequeue && err != nil {
 		c.queue.AddRateLimited(workQueueKey)
 	}
@@ -147,11 +153,11 @@ func (c OpenShiftAPIServerOperator) sync() error {
 }
 
 // Run starts the openshift-apiserver-operator and blocks until stopCh is closed.
-func (c *OpenShiftAPIServerOperator) Run(workers int, stopCh <-chan struct{}) {
+func (c *ServiceCatalogAPIServerOperator) Run(workers int, stopCh <-chan struct{}) {
 	defer utilruntime.HandleCrash()
 	defer c.queue.ShutDown()
 
-	glog.Infof("Starting OpenShiftSvCatAPIServerOperator")
+	glog.Infof("Starting OpenShiftSerCatAPIServerOperator")
 	defer glog.Infof("Shutting down OpenShiftSvCatAPIServerOperator")
 
 	// doesn't matter what workers say, only start one.
@@ -160,12 +166,12 @@ func (c *OpenShiftAPIServerOperator) Run(workers int, stopCh <-chan struct{}) {
 	<-stopCh
 }
 
-func (c *OpenShiftAPIServerOperator) runWorker() {
+func (c *ServiceCatalogAPIServerOperator) runWorker() {
 	for c.processNextWorkItem() {
 	}
 }
 
-func (c *OpenShiftAPIServerOperator) processNextWorkItem() bool {
+func (c *ServiceCatalogAPIServerOperator) processNextWorkItem() bool {
 	dsKey, quit := c.queue.Get()
 	if quit {
 		return false
@@ -188,7 +194,7 @@ func (c *OpenShiftAPIServerOperator) processNextWorkItem() bool {
 }
 
 // eventHandler queues the operator to check spec and status
-func (c *OpenShiftAPIServerOperator) eventHandler() cache.ResourceEventHandler {
+func (c *ServiceCatalogAPIServerOperator) eventHandler() cache.ResourceEventHandler {
 	return cache.ResourceEventHandlerFuncs{
 		AddFunc:    func(obj interface{}) { c.queue.Add(workQueueKey) },
 		UpdateFunc: func(old, new interface{}) { c.queue.Add(workQueueKey) },
@@ -199,7 +205,7 @@ func (c *OpenShiftAPIServerOperator) eventHandler() cache.ResourceEventHandler {
 // this set of namespaces will include things like logging and metrics which are used to drive
 var interestingNamespaces = sets.NewString(operatorclient.TargetNamespaceName)
 
-func (c *OpenShiftAPIServerOperator) namespaceEventHandler() cache.ResourceEventHandler {
+func (c *ServiceCatalogAPIServerOperator) namespaceEventHandler() cache.ResourceEventHandler {
 	return cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			ns, ok := obj.(*corev1.Namespace)

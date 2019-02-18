@@ -72,7 +72,7 @@ func TestProgressingCondition(t *testing.T) {
 			configGeneration:            100,
 			configObservedGeneration:    101,
 			expectedStatus:              operatorv1.ConditionTrue,
-			expectedMessage:             "openshiftapiserveroperatorconfigs/instance: observed generation is 101, desired generation is 100.",
+			expectedMessage:             "servicecatalogapiserveroperatorconfigs/instance: observed generation is 101, desired generation is 100.",
 		},
 		{
 			name:                        "ConfigObservedBehind",
@@ -81,7 +81,7 @@ func TestProgressingCondition(t *testing.T) {
 			configGeneration:            101,
 			configObservedGeneration:    100,
 			expectedStatus:              operatorv1.ConditionTrue,
-			expectedMessage:             "openshiftapiserveroperatorconfigs/instance: observed generation is 100, desired generation is 101.",
+			expectedMessage:             "servicecatalogapiserveroperatorconfigs/instance: observed generation is 100, desired generation is 101.",
 		},
 		{
 			name:                        "MultipleObservedAhead",
@@ -90,7 +90,7 @@ func TestProgressingCondition(t *testing.T) {
 			configGeneration:            100,
 			configObservedGeneration:    101,
 			expectedStatus:              operatorv1.ConditionTrue,
-			expectedMessage:             "daemonset/apiserver.openshift-operator: observed generation is 101, desired generation is 100.\nopenshiftapiserveroperatorconfigs/instance: observed generation is 101, desired generation is 100.",
+			expectedMessage:             "daemonset/apiserver.openshift-operator: observed generation is 101, desired generation is 100.\nservicecatalogapiserveroperatorconfigs/instance: observed generation is 101, desired generation is 100.",
 		},
 		{
 			name:                        "ConfigAndDaemonSetGenerationMismatch",
@@ -120,15 +120,15 @@ func TestProgressingCondition(t *testing.T) {
 					},
 				})
 
-			operatorConfig := &operatorv1.OpenShiftAPIServer{
+			operatorConfig := &operatorv1.ServiceCatalogAPIServer{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:       "svcat",
+					Name:       "cluster",
 					Generation: tc.configGeneration,
 				},
-				Spec: operatorv1.OpenShiftAPIServerSpec{
+				Spec: operatorv1.ServiceCatalogAPIServerSpec{
 					OperatorSpec: operatorv1.OperatorSpec{},
 				},
-				Status: operatorv1.OpenShiftAPIServerStatus{
+				Status: operatorv1.ServiceCatalogAPIServerStatus{
 					OperatorStatus: operatorv1.OperatorStatus{
 						ObservedGeneration: tc.configObservedGeneration,
 					},
@@ -138,7 +138,7 @@ func TestProgressingCondition(t *testing.T) {
 			openshiftConfigClient := configfake.NewSimpleClientset()
 			kubeAggregatorClient := kubeaggregatorfake.NewSimpleClientset()
 
-			operator := OpenShiftAPIServerOperator{
+			operator := ServiceCatalogAPIServerOperator{
 				kubeClient:              kubeClient,
 				eventRecorder:           events.NewInMemoryRecorder(""),
 				operatorConfigClient:    apiServiceOperatorClient.OperatorV1(),
@@ -146,9 +146,9 @@ func TestProgressingCondition(t *testing.T) {
 				apiregistrationv1Client: kubeAggregatorClient.ApiregistrationV1(),
 			}
 
-			syncOpenShiftAPIServer_v311_00_to_latest(operator, operatorConfig)
+			syncServiceCatalogAPIServer_v311_00_to_latest(operator, operatorConfig)
 
-			result, err := apiServiceOperatorClient.OperatorV1().OpenShiftAPIServers().Get("svcat", metav1.GetOptions{})
+			result, err := apiServiceOperatorClient.OperatorV1().ServiceCatalogAPIServers().Get("cluster", metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -295,15 +295,15 @@ func TestAvailableStatus(t *testing.T) {
 					},
 				})
 
-			operatorConfig := &operatorv1.OpenShiftAPIServer{
+			operatorConfig := &operatorv1.ServiceCatalogAPIServer{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:       "svcat",
+					Name:       "cluster",
 					Generation: 99,
 				},
-				Spec: operatorv1.OpenShiftAPIServerSpec{
+				Spec: operatorv1.ServiceCatalogAPIServerSpec{
 					OperatorSpec: operatorv1.OperatorSpec{},
 				},
-				Status: operatorv1.OpenShiftAPIServerStatus{
+				Status: operatorv1.ServiceCatalogAPIServerStatus{
 					OperatorStatus: operatorv1.OperatorStatus{
 						ObservedGeneration: 99,
 					},
@@ -328,7 +328,7 @@ func TestAvailableStatus(t *testing.T) {
 				kubeAggregatorClient.PrependReactor("*", "apiservices", tc.apiServiceReactor)
 			}
 
-			operator := OpenShiftAPIServerOperator{
+			operator := ServiceCatalogAPIServerOperator{
 				kubeClient:              kubeClient,
 				eventRecorder:           events.NewInMemoryRecorder(""),
 				operatorConfigClient:    apiServiceOperatorClient.OperatorV1(),
@@ -336,9 +336,9 @@ func TestAvailableStatus(t *testing.T) {
 				apiregistrationv1Client: kubeAggregatorClient.ApiregistrationV1(),
 			}
 
-			syncOpenShiftAPIServer_v311_00_to_latest(operator, operatorConfig)
+			syncServiceCatalogAPIServer_v311_00_to_latest(operator, operatorConfig)
 
-			result, err := apiServiceOperatorClient.OperatorV1().OpenShiftAPIServers().Get("svcat", metav1.GetOptions{})
+			result, err := apiServiceOperatorClient.OperatorV1().ServiceCatalogAPIServers().Get("cluster", metav1.GetOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}

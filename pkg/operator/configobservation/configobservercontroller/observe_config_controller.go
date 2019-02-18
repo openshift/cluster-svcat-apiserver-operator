@@ -35,14 +35,16 @@ func NewConfigObserver(
 				ResourceSync:    resourceSyncer,
 				EndpointsLister: kubeInformersForEtcdNamespace.Core().V1().Endpoints().Lister(),
 				PreRunCachesSynced: []cache.InformerSynced{
-					operatorConfigInformers.Operator().V1().OpenShiftAPIServers().Informer().HasSynced,
+					operatorConfigInformers.Operator().V1().ServiceCatalogAPIServers().Informer().HasSynced,
 					kubeInformersForEtcdNamespace.Core().V1().Endpoints().Informer().HasSynced,
 				},
 			},
 		),
 	}
-	operatorConfigInformers.Operator().V1().OpenShiftAPIServers().Informer().AddEventHandler(c.EventHandler())
+	operatorConfigInformers.Operator().V1().ServiceCatalogAPIServers().Informer().AddEventHandler(c.EventHandler())
 	kubeInformersForEtcdNamespace.Core().V1().Endpoints().Informer().AddEventHandler(c.EventHandler())
-	configInformers.Config().V1().Images().Informer().AddEventHandler(c.EventHandler())
+
+	//TODO delete
+	//configInformers.Config().V1().Images().Informer().AddEventHandler(c.EventHandler())
 	return c
 }

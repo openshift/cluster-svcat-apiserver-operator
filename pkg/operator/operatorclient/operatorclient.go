@@ -10,15 +10,15 @@ import (
 
 type OperatorClient struct {
 	Informers operatorv1informers.SharedInformerFactory
-	Client    operatorv1client.OpenShiftAPIServersGetter
+	Client    operatorv1client.ServiceCatalogAPIServersGetter
 }
 
 func (p *OperatorClient) Informer() cache.SharedIndexInformer {
-	return p.Informers.Operator().V1().OpenShiftAPIServers().Informer()
+	return p.Informers.Operator().V1().ServiceCatalogAPIServers().Informer()
 }
 
 func (c *OperatorClient) GetOperatorState() (*operatorv1.OperatorSpec, *operatorv1.OperatorStatus, string, error) {
-	instance, err := c.Informers.Operator().V1().OpenShiftAPIServers().Lister().Get("svcat")
+	instance, err := c.Informers.Operator().V1().ServiceCatalogAPIServers().Lister().Get("cluster")
 	if err != nil {
 		return nil, nil, "", err
 	}
@@ -27,7 +27,7 @@ func (c *OperatorClient) GetOperatorState() (*operatorv1.OperatorSpec, *operator
 }
 
 func (c *OperatorClient) UpdateOperatorSpec(resourceVersion string, spec *operatorv1.OperatorSpec) (*operatorv1.OperatorSpec, string, error) {
-	original, err := c.Informers.Operator().V1().OpenShiftAPIServers().Lister().Get("svcat")
+	original, err := c.Informers.Operator().V1().ServiceCatalogAPIServers().Lister().Get("cluster")
 	if err != nil {
 		return nil, "", err
 	}
@@ -35,7 +35,7 @@ func (c *OperatorClient) UpdateOperatorSpec(resourceVersion string, spec *operat
 	copy.ResourceVersion = resourceVersion
 	copy.Spec.OperatorSpec = *spec
 
-	ret, err := c.Client.OpenShiftAPIServers().Update(copy)
+	ret, err := c.Client.ServiceCatalogAPIServers().Update(copy)
 	if err != nil {
 		return nil, "", err
 	}
@@ -43,7 +43,7 @@ func (c *OperatorClient) UpdateOperatorSpec(resourceVersion string, spec *operat
 	return &ret.Spec.OperatorSpec, ret.ResourceVersion, nil
 }
 func (c *OperatorClient) UpdateOperatorStatus(resourceVersion string, status *operatorv1.OperatorStatus) (*operatorv1.OperatorStatus, error) {
-	original, err := c.Informers.Operator().V1().OpenShiftAPIServers().Lister().Get("svcat")
+	original, err := c.Informers.Operator().V1().ServiceCatalogAPIServers().Lister().Get("cluster")
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (c *OperatorClient) UpdateOperatorStatus(resourceVersion string, status *op
 	copy.ResourceVersion = resourceVersion
 	copy.Status.OperatorStatus = *status
 
-	ret, err := c.Client.OpenShiftAPIServers().UpdateStatus(copy)
+	ret, err := c.Client.ServiceCatalogAPIServers().UpdateStatus(copy)
 	if err != nil {
 		return nil, err
 	}
