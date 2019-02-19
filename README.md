@@ -3,7 +3,7 @@ The cluster-svcat-apiserver-operator installs and maintains openshift/service-ca
 
 Note that the manifests do not create the Cluster Operator or the ServiceCatalogAPIServer custom resource.  While the CVO installs the Service Catalog operators, we don't want Service Catalog installed by default.  The cluster admin must create the ServiceCatalogAPIServer CR to cause the operator to perform the installation ([see below](#Trigger-installation-of-Service-Catalog-API-Server))
 
-Once the operator detects the CR it will create the Service Catalog Cluster Operator resource and proceed with reconciling the Service Catalog API Server deployment.
+Once the operator detects the CR it will create the Service Catalog API Server Cluster Operator resource and proceed with reconciling the Service Catalog API Server deployment.
 
 ## Deployment the operator prior to CVO integration
 1. Use openshift/installer to install a cluster.  Skip to step 6 if you want to use pre-built operator images.
@@ -45,9 +45,9 @@ If the state is `Managed` the operator will install Service Catalog API Server. 
 
 Once the CR is created the operator should create a new ClusterOperator resource:
 ```
-oc get clusteroperator openshift-svcat-apiserver
+oc get clusteroperator service-catalog-apiserver
 NAME                        VERSION   AVAILABLE   PROGRESSING   FAILING   SINCE
-openshift-svcat-apiserver             True        False         False     1m
+service-catalog-apiserver             True        False         False     1m
 ```
 Review operator pod logs from the `openshift-svcat-apiserver` namespace to see details of the operator processing.
 
