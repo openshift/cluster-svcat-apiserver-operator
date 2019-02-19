@@ -2,11 +2,11 @@ package operator
 
 import (
 	"fmt"
-	"github.com/golang/glog"
 	"os"
 	"time"
 
-	"github.com/openshift/cluster-svcat-apiserver-operator/pkg/operator/configobservation/configobservercontroller"
+	"github.com/golang/glog"
+
 	"github.com/openshift/cluster-svcat-apiserver-operator/pkg/operator/operatorclient"
 	"github.com/openshift/cluster-svcat-apiserver-operator/pkg/operator/resourcesynccontroller"
 	"github.com/openshift/cluster-svcat-apiserver-operator/pkg/operator/v311_00_assets"
@@ -109,17 +109,8 @@ func RunOperator(ctx *controllercmd.ControllerContext) error {
 		ctx.EventRecorder,
 	)
 
-	configObserver := configobservercontroller.NewConfigObserver(
-		operatorClient,
-		resourceSyncController,
-		operatorConfigInformers,
-		kubeInformersForNamespaces.InformersFor("kube-system"),
-		configInformers,
-		ctx.EventRecorder,
-	)
-
 	clusterOperatorStatus := status.NewClusterOperatorStatusController(
-		"openshift-svcat-apiserver",
+		"service-catalog-apiserver",
 		append(
 			[]configv1.ObjectReference{
 				//TODO: this should be a service catalog api server config map
@@ -161,7 +152,6 @@ func RunOperator(ctx *controllercmd.ControllerContext) error {
 	configInformers.Start(ctx.Done())
 
 	go workloadController.Run(1, ctx.Done())
-	go configObserver.Run(1, ctx.Done())
 	go clusterOperatorStatus.Run(1, ctx.Done())
 	go finalizerController.Run(1, ctx.Done())
 	go resourceSyncController.Run(1, ctx.Done())
