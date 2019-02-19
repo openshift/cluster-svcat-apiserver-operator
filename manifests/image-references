@@ -5,8 +5,8 @@ spec:
   - name: cluster-svcat-apiserver-operator
     from:
       kind: DockerImage
-      name: docker.io/openshift/origin-cluster-svcat-apiserver-operator:v4.0
+      name: registry.svc.ci.openshift.org/openshift/origin-v4.0:cluster-svcat-apiserver-operator
   - name: service-catalog
     from:
       kind: DockerImage
-      name: quay.io/openshift/origin-service-catalog:v4.0
+      name: registry.svc.ci.openshift.org/openshift/origin-v4.0:service-catalog
