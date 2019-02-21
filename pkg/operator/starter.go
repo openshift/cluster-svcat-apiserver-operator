@@ -56,7 +56,7 @@ func RunOperator(ctx *controllercmd.ControllerContext) error {
 	v1helpers.EnsureOperatorConfigExists(
 		dynamicClient,
 		v311_00_assets.MustAsset("v3.11.0/openshift-svcat-apiserver/operator-config.yaml"),
-		schema.GroupVersionResource{Group: operatorv1.GroupName, Version: operatorv1.GroupVersion.Version, Resource: "openshiftapiservers"},
+		schema.GroupVersionResource{Group: operatorv1.GroupName, Version: operatorv1.GroupVersion.Version, Resource: "servicecatalogapiservers"},
 	)
 
 	operatorConfigInformers := operatorv1informers.NewSharedInformerFactory(operatorConfigClient, 10*time.Minute)
@@ -113,8 +113,7 @@ func RunOperator(ctx *controllercmd.ControllerContext) error {
 		"service-catalog-apiserver",
 		append(
 			[]configv1.ObjectReference{
-				//TODO: this should be a service catalog api server config map
-				{Group: "operator.openshift.io", Resource: "openshiftapiservers", Name: "svcat"},
+				{Group: "operator.openshift.io", Resource: "servercatalogapiservers", Name: "cluster"},
 				{Resource: "namespaces", Name: operatorclient.UserSpecifiedGlobalConfigNamespace},
 				{Resource: "namespaces", Name: operatorclient.MachineSpecifiedGlobalConfigNamespace},
 				{Resource: "namespaces", Name: operatorclient.OperatorNamespace},
