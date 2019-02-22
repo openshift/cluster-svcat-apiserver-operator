@@ -13,10 +13,8 @@
 // bindata/v3.11.0/openshift-svcat-apiserver/crb-readiness-binding.yaml
 // bindata/v3.11.0/openshift-svcat-apiserver/crb-sar-creator-binding.yaml
 // bindata/v3.11.0/openshift-svcat-apiserver/crb-serviceclass-viewer-binding.yaml
-// bindata/v3.11.0/openshift-svcat-apiserver/defaultconfig.yaml
 // bindata/v3.11.0/openshift-svcat-apiserver/ds.yaml
 // bindata/v3.11.0/openshift-svcat-apiserver/ns.yaml
-// bindata/v3.11.0/openshift-svcat-apiserver/operator-config.yaml
 // bindata/v3.11.0/openshift-svcat-apiserver/role-extension-apiserver-auth-reader.yaml
 // bindata/v3.11.0/openshift-svcat-apiserver/rolebinding-extension-apiserver-auth-reader.yaml
 // bindata/v3.11.0/openshift-svcat-apiserver/sa.yaml
@@ -501,27 +499,6 @@ func v3110OpenshiftSvcatApiserverCrbServiceclassViewerBindingYaml() (*asset, err
 	return a, nil
 }
 
-var _v3110OpenshiftSvcatApiserverDefaultconfigYaml = []byte(`apiVersion: openshiftcontrolplane.config.openshift.io/v1
-kind: OpenShiftAPIServerConfig
-aggregatorConfig:
-
-`)
-
-func v3110OpenshiftSvcatApiserverDefaultconfigYamlBytes() ([]byte, error) {
-	return _v3110OpenshiftSvcatApiserverDefaultconfigYaml, nil
-}
-
-func v3110OpenshiftSvcatApiserverDefaultconfigYaml() (*asset, error) {
-	bytes, err := v3110OpenshiftSvcatApiserverDefaultconfigYamlBytes()
-	if err != nil {
-		return nil, err
-	}
-
-	info := bindataFileInfo{name: "v3.11.0/openshift-svcat-apiserver/defaultconfig.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info}
-	return a, nil
-}
-
 var _v3110OpenshiftSvcatApiserverDsYaml = []byte(`apiVersion: "apps/v1"
 kind: DaemonSet
 metadata:
@@ -651,32 +628,6 @@ func v3110OpenshiftSvcatApiserverNsYaml() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "v3.11.0/openshift-svcat-apiserver/ns.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info}
-	return a, nil
-}
-
-var _v3110OpenshiftSvcatApiserverOperatorConfigYaml = []byte(`apiVersion: operator.openshift.io/v1
-kind: OpenShiftAPIServer
-metadata:
-  name: cluster
-spec:
-  logLevel: "Normal"
-  managementState: Managed
-  operandSpecs: null
-  unsupportedConfigOverrides: null
-`)
-
-func v3110OpenshiftSvcatApiserverOperatorConfigYamlBytes() ([]byte, error) {
-	return _v3110OpenshiftSvcatApiserverOperatorConfigYaml, nil
-}
-
-func v3110OpenshiftSvcatApiserverOperatorConfigYaml() (*asset, error) {
-	bytes, err := v3110OpenshiftSvcatApiserverOperatorConfigYamlBytes()
-	if err != nil {
-		return nil, err
-	}
-
-	info := bindataFileInfo{name: "v3.11.0/openshift-svcat-apiserver/operator-config.yaml", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -861,10 +812,8 @@ var _bindata = map[string]func() (*asset, error){
 	"v3.11.0/openshift-svcat-apiserver/crb-readiness-binding.yaml":                       v3110OpenshiftSvcatApiserverCrbReadinessBindingYaml,
 	"v3.11.0/openshift-svcat-apiserver/crb-sar-creator-binding.yaml":                     v3110OpenshiftSvcatApiserverCrbSarCreatorBindingYaml,
 	"v3.11.0/openshift-svcat-apiserver/crb-serviceclass-viewer-binding.yaml":             v3110OpenshiftSvcatApiserverCrbServiceclassViewerBindingYaml,
-	"v3.11.0/openshift-svcat-apiserver/defaultconfig.yaml":                               v3110OpenshiftSvcatApiserverDefaultconfigYaml,
 	"v3.11.0/openshift-svcat-apiserver/ds.yaml":                                          v3110OpenshiftSvcatApiserverDsYaml,
 	"v3.11.0/openshift-svcat-apiserver/ns.yaml":                                          v3110OpenshiftSvcatApiserverNsYaml,
-	"v3.11.0/openshift-svcat-apiserver/operator-config.yaml":                             v3110OpenshiftSvcatApiserverOperatorConfigYaml,
 	"v3.11.0/openshift-svcat-apiserver/role-extension-apiserver-auth-reader.yaml":        v3110OpenshiftSvcatApiserverRoleExtensionApiserverAuthReaderYaml,
 	"v3.11.0/openshift-svcat-apiserver/rolebinding-extension-apiserver-auth-reader.yaml": v3110OpenshiftSvcatApiserverRolebindingExtensionApiserverAuthReaderYaml,
 	"v3.11.0/openshift-svcat-apiserver/sa.yaml":                                          v3110OpenshiftSvcatApiserverSaYaml,
@@ -914,23 +863,21 @@ type bintree struct {
 var _bintree = &bintree{nil, map[string]*bintree{
 	"v3.11.0": {nil, map[string]*bintree{
 		"openshift-svcat-apiserver": {nil, map[string]*bintree{
-			"cm.yaml":                                          {v3110OpenshiftSvcatApiserverCmYaml, map[string]*bintree{}},
-			"cr-aggregate-to-admin.yaml":                       {v3110OpenshiftSvcatApiserverCrAggregateToAdminYaml, map[string]*bintree{}},
-			"cr-aggregate-to-edit.yaml":                        {v3110OpenshiftSvcatApiserverCrAggregateToEditYaml, map[string]*bintree{}},
-			"cr-aggregate-to-view.yaml":                        {v3110OpenshiftSvcatApiserverCrAggregateToViewYaml, map[string]*bintree{}},
-			"cr-namespace-viewer.yaml":                         {v3110OpenshiftSvcatApiserverCrNamespaceViewerYaml, map[string]*bintree{}},
-			"cr-readiness-probe.yaml":                          {v3110OpenshiftSvcatApiserverCrReadinessProbeYaml, map[string]*bintree{}},
-			"cr-sar-creator.yaml":                              {v3110OpenshiftSvcatApiserverCrSarCreatorYaml, map[string]*bintree{}},
-			"cr-serviceclass-viewer.yaml":                      {v3110OpenshiftSvcatApiserverCrServiceclassViewerYaml, map[string]*bintree{}},
-			"crb-auth-delegator-binding.yaml":                  {v3110OpenshiftSvcatApiserverCrbAuthDelegatorBindingYaml, map[string]*bintree{}},
-			"crb-namespace-viewer-binding.yaml":                {v3110OpenshiftSvcatApiserverCrbNamespaceViewerBindingYaml, map[string]*bintree{}},
-			"crb-readiness-binding.yaml":                       {v3110OpenshiftSvcatApiserverCrbReadinessBindingYaml, map[string]*bintree{}},
-			"crb-sar-creator-binding.yaml":                     {v3110OpenshiftSvcatApiserverCrbSarCreatorBindingYaml, map[string]*bintree{}},
-			"crb-serviceclass-viewer-binding.yaml":             {v3110OpenshiftSvcatApiserverCrbServiceclassViewerBindingYaml, map[string]*bintree{}},
-			"defaultconfig.yaml":                               {v3110OpenshiftSvcatApiserverDefaultconfigYaml, map[string]*bintree{}},
-			"ds.yaml":                                          {v3110OpenshiftSvcatApiserverDsYaml, map[string]*bintree{}},
-			"ns.yaml":                                          {v3110OpenshiftSvcatApiserverNsYaml, map[string]*bintree{}},
-			"operator-config.yaml":                             {v3110OpenshiftSvcatApiserverOperatorConfigYaml, map[string]*bintree{}},
+			"cm.yaml":                              {v3110OpenshiftSvcatApiserverCmYaml, map[string]*bintree{}},
+			"cr-aggregate-to-admin.yaml":           {v3110OpenshiftSvcatApiserverCrAggregateToAdminYaml, map[string]*bintree{}},
+			"cr-aggregate-to-edit.yaml":            {v3110OpenshiftSvcatApiserverCrAggregateToEditYaml, map[string]*bintree{}},
+			"cr-aggregate-to-view.yaml":            {v3110OpenshiftSvcatApiserverCrAggregateToViewYaml, map[string]*bintree{}},
+			"cr-namespace-viewer.yaml":             {v3110OpenshiftSvcatApiserverCrNamespaceViewerYaml, map[string]*bintree{}},
+			"cr-readiness-probe.yaml":              {v3110OpenshiftSvcatApiserverCrReadinessProbeYaml, map[string]*bintree{}},
+			"cr-sar-creator.yaml":                  {v3110OpenshiftSvcatApiserverCrSarCreatorYaml, map[string]*bintree{}},
+			"cr-serviceclass-viewer.yaml":          {v3110OpenshiftSvcatApiserverCrServiceclassViewerYaml, map[string]*bintree{}},
+			"crb-auth-delegator-binding.yaml":      {v3110OpenshiftSvcatApiserverCrbAuthDelegatorBindingYaml, map[string]*bintree{}},
+			"crb-namespace-viewer-binding.yaml":    {v3110OpenshiftSvcatApiserverCrbNamespaceViewerBindingYaml, map[string]*bintree{}},
+			"crb-readiness-binding.yaml":           {v3110OpenshiftSvcatApiserverCrbReadinessBindingYaml, map[string]*bintree{}},
+			"crb-sar-creator-binding.yaml":         {v3110OpenshiftSvcatApiserverCrbSarCreatorBindingYaml, map[string]*bintree{}},
+			"crb-serviceclass-viewer-binding.yaml": {v3110OpenshiftSvcatApiserverCrbServiceclassViewerBindingYaml, map[string]*bintree{}},
+			"ds.yaml": {v3110OpenshiftSvcatApiserverDsYaml, map[string]*bintree{}},
+			"ns.yaml": {v3110OpenshiftSvcatApiserverNsYaml, map[string]*bintree{}},
 			"role-extension-apiserver-auth-reader.yaml":        {v3110OpenshiftSvcatApiserverRoleExtensionApiserverAuthReaderYaml, map[string]*bintree{}},
 			"rolebinding-extension-apiserver-auth-reader.yaml": {v3110OpenshiftSvcatApiserverRolebindingExtensionApiserverAuthReaderYaml, map[string]*bintree{}},
 			"sa.yaml":  {v3110OpenshiftSvcatApiserverSaYaml, map[string]*bintree{}},
