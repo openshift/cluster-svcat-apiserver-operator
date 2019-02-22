@@ -1,9 +1,0 @@
-apiVersion: operator.openshift.io/v1
-kind: OpenShiftAPIServer
-metadata:
-  name: cluster
-spec:
-  logLevel: "Normal"
-  managementState: Managed
-  operandSpecs: null
-  unsupportedConfigOverrides: null

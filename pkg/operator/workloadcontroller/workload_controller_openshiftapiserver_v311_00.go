@@ -215,11 +215,6 @@ func syncServiceCatalogAPIServer_v311_00_to_latest(c ServiceCatalogAPIServerOper
 
 func manageServiceCatalogAPIServerConfigMap_v311_00_to_latest(kubeClient kubernetes.Interface, client coreclientv1.ConfigMapsGetter, recorder events.Recorder, operatorConfig *operatorv1.ServiceCatalogAPIServer) (*corev1.ConfigMap, bool, error) {
 	configMap := resourceread.ReadConfigMapV1OrDie(v311_00_assets.MustAsset("v3.11.0/openshift-svcat-apiserver/cm.yaml"))
-	defaultConfig := v311_00_assets.MustAsset("v3.11.0/openshift-svcat-apiserver/defaultconfig.yaml")
-	requiredConfigMap, _, err := resourcemerge.MergeConfigMap(configMap, "config.yaml", nil, defaultConfig, operatorConfig.Spec.ObservedConfig.Raw, operatorConfig.Spec.UnsupportedConfigOverrides.Raw)
-	if err != nil {
-		return nil, false, err
-	}
 
 	// we can embed input hashes on our main configmap to drive rollouts when they change.
 	inputHashes, err := resourcehash.MultipleObjectHashStringMapForObjectReferences(
@@ -234,10 +229,10 @@ func manageServiceCatalogAPIServerConfigMap_v311_00_to_latest(kubeClient kuberne
 		return nil, false, err
 	}
 	for k, v := range inputHashes {
-		requiredConfigMap.Data[k] = v
+		configMap.Data[k] = v
 	}
 
-	return resourceapply.ApplyConfigMap(client, recorder, requiredConfigMap)
+	return resourceapply.ApplyConfigMap(client, recorder, configMap)
 }
 
 func manageServiceCatalogAPIServerDaemonSet_v311_00_to_latest(client appsclientv1.DaemonSetsGetter, recorder events.Recorder, imagePullSpec string, operatorConfig *operatorv1.ServiceCatalogAPIServer, generationStatus []operatorv1.GenerationStatus, forceRollingUpdate bool) (*appsv1.DaemonSet, bool, error) {
