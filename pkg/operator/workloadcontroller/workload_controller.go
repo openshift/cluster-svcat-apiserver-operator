@@ -115,7 +115,9 @@ func (c ServiceCatalogAPIServerOperator) sync() error {
 		}
 		return nil
 	default:
-		c.eventRecorder.Warningf("ManagementStateUnknown", "Unrecognized operator management state %q", operatorConfig.Spec.ManagementState)
+		if len(operatorConfig.Spec.ManagementState) > 0 {
+			c.eventRecorder.Warningf("ManagementStateUnknown", "Unrecognized operator management state %q", operatorConfig.Spec.ManagementState)
+		}
 		return nil
 	}
 
