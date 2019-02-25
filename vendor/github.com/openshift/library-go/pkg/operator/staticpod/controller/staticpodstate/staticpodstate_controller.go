@@ -30,9 +30,10 @@ var (
 // StaticPodStateController is a controller that watches static pods and will produce a failing status if the
 //// static pods start crashing for some reason.
 type StaticPodStateController struct {
-	targetNamespace string
-	staticPodName   string
-	operandName     string
+	targetNamespace   string
+	staticPodName     string
+	operandName       string
+	operatorNamespace string
 
 	operatorConfigClient v1helpers.StaticPodOperatorClient
 	configMapGetter      corev1client.ConfigMapsGetter
@@ -47,7 +48,7 @@ type StaticPodStateController struct {
 // NewStaticPodStateController creates a controller that watches static pods and will produce a failing status if the
 // static pods start crashing for some reason.
 func NewStaticPodStateController(
-	targetNamespace, operandName, staticPodName string,
+	targetNamespace, staticPodName, operatorNamespace, operandName string,
 	kubeInformersForTargetNamespace informers.SharedInformerFactory,
 	operatorConfigClient v1helpers.StaticPodOperatorClient,
 	configMapGetter corev1client.ConfigMapsGetter,
@@ -56,9 +57,10 @@ func NewStaticPodStateController(
 	eventRecorder events.Recorder,
 ) *StaticPodStateController {
 	c := &StaticPodStateController{
-		targetNamespace: targetNamespace,
-		staticPodName:   staticPodName,
-		operandName:     operandName,
+		targetNamespace:   targetNamespace,
+		staticPodName:     staticPodName,
+		operandName:       operandName,
+		operatorNamespace: operatorNamespace,
 
 		operatorConfigClient: operatorConfigClient,
 		configMapGetter:      configMapGetter,
@@ -82,10 +84,13 @@ func (c *StaticPodStateController) sync() error {
 	}
 
 	switch operatorSpec.ManagementState {
+	case operatorv1.Managed:
 	case operatorv1.Unmanaged:
 		return nil
 	case operatorv1.Removed:
-		// TODO probably just fail.  Static pod managers can't be removed.
+		// TODO probably just fail
+		return nil
+	default:
 		return nil
 	}
 
@@ -96,6 +101,8 @@ func (c *StaticPodStateController) sync() error {
 		pod, err := c.podsGetter.Pods(c.targetNamespace).Get(mirrorPodNameForNode(c.staticPodName, node.NodeName), metav1.GetOptions{})
 		if err != nil {
 			errs = append(errs, err)
+			failingErrorCount++
+			continue
 		}
 		images.Insert(pod.Spec.Containers[0].Image)
 
@@ -129,7 +136,7 @@ func (c *StaticPodStateController) sync() error {
 	} else {
 		c.versionRecorder.SetVersion(
 			c.operandName,
-			status.VersionForOperand(c.targetNamespace, images.List()[0], c.configMapGetter, c.eventRecorder),
+			status.VersionForOperand(c.operatorNamespace, images.List()[0], c.configMapGetter, c.eventRecorder),
 		)
 	}
 
