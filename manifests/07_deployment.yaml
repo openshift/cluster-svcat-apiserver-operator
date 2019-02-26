@@ -20,7 +20,7 @@ spec:
       containers:
       - name: operator
         image: registry.svc.ci.openshift.org/openshift/origin-v4.0:cluster-svcat-apiserver-operator
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8443
           name: metrics
