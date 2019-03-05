@@ -4,7 +4,7 @@ metadata:
   labels:
     app: apiserver
   name: apiserver
-  namespace: kube-service-catalog
+  namespace: openshift-service-catalog
 spec:
   selector:
     matchLabels:
@@ -21,6 +21,7 @@ spec:
       serviceAccountName: service-catalog-apiserver
       nodeSelector:
         node-role.kubernetes.io/master: ""
+      priorityClassName: "system-cluster-critical"
       containers:
       - args:
         - apiserver

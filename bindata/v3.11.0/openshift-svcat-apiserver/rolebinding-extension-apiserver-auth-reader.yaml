@@ -9,4 +9,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: service-catalog-apiserver
-  namespace: kube-service-catalog
+  namespace: openshift-service-catalog

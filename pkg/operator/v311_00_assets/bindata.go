@@ -66,7 +66,7 @@ func (fi bindataFileInfo) Sys() interface{} {
 var _v3110OpenshiftSvcatApiserverCmYaml = []byte(`apiVersion: v1
 kind: ConfigMap
 metadata:
-  namespace: kube-service-catalog
+  namespace: openshift-service-catalog
   name: config
 data:
   config.yaml:
@@ -364,7 +364,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: service-catalog-apiserver
-  namespace: kube-service-catalog
+  namespace: openshift-service-catalog
 `)
 
 func v3110OpenshiftSvcatApiserverCrbAuthDelegatorBindingYamlBytes() ([]byte, error) {
@@ -392,7 +392,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: service-catalog-apiserver
-  namespace: kube-service-catalog
+  namespace: openshift-service-catalog
 `)
 
 func v3110OpenshiftSvcatApiserverCrbNamespaceViewerBindingYamlBytes() ([]byte, error) {
@@ -452,7 +452,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: service-catalog-apiserver
-  namespace: kube-service-catalog
+  namespace: openshift-service-catalog
 `)
 
 func v3110OpenshiftSvcatApiserverCrbSarCreatorBindingYamlBytes() ([]byte, error) {
@@ -505,7 +505,7 @@ metadata:
   labels:
     app: apiserver
   name: apiserver
-  namespace: kube-service-catalog
+  namespace: openshift-service-catalog
 spec:
   selector:
     matchLabels:
@@ -522,6 +522,7 @@ spec:
       serviceAccountName: service-catalog-apiserver
       nodeSelector:
         node-role.kubernetes.io/master: ""
+      priorityClassName: "system-cluster-critical"
       containers:
       - args:
         - apiserver
@@ -613,7 +614,7 @@ func v3110OpenshiftSvcatApiserverDsYaml() (*asset, error) {
 var _v3110OpenshiftSvcatApiserverNsYaml = []byte(`apiVersion: v1
 kind: Namespace
 metadata:
-  name: kube-service-catalog
+  name: openshift-service-catalog
   labels:
     openshift.io/run-level: "1"`)
 
@@ -674,7 +675,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: service-catalog-apiserver
-  namespace: kube-service-catalog
+  namespace: openshift-service-catalog
 `)
 
 func v3110OpenshiftSvcatApiserverRolebindingExtensionApiserverAuthReaderYamlBytes() ([]byte, error) {
@@ -695,7 +696,7 @@ func v3110OpenshiftSvcatApiserverRolebindingExtensionApiserverAuthReaderYaml() (
 var _v3110OpenshiftSvcatApiserverSaYaml = []byte(`apiVersion: v1
 kind: ServiceAccount
 metadata:
-  namespace: kube-service-catalog
+  namespace: openshift-service-catalog
   name: service-catalog-apiserver
 `)
 
@@ -717,7 +718,7 @@ func v3110OpenshiftSvcatApiserverSaYaml() (*asset, error) {
 var _v3110OpenshiftSvcatApiserverSvcYaml = []byte(`apiVersion: v1
 kind: Service
 metadata:
-  namespace: kube-service-catalog
+  namespace: openshift-service-catalog
   name: api
   annotations:
     service.alpha.openshift.io/serving-cert-secret-name: serving-cert

@@ -30,9 +30,9 @@ spec:
 EOF
 ```
 Once the cluster `ServiceCatalogAPIServer` is found to exist and have a `managementState` of `Managed` the operator will create necessary resources in the
-`kube-service-catalog` namespace for deploying the Service Catalog API Server.
+`openshift-service-catalog` namespace for deploying the Service Catalog API Server.
 
-Watch for service catalog apiservers to come up in the kube-service-catalog namespace.
+Watch for service catalog apiservers to come up in the openshift-service-catalog namespace.
 
 ## Verification & debugging
 Nothing happens without the CR:
