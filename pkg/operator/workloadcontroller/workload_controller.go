@@ -115,40 +115,9 @@ func (c ServiceCatalogAPIServerOperator) sync() error {
 		}
 		return nil
 	default:
-		if len(operatorConfig.Spec.ManagementState) > 0 {
-			c.eventRecorder.Warningf("ManagementStateUnknown", "Unrecognized operator management state %q", operatorConfig.Spec.ManagementState)
-		}
+		c.eventRecorder.Warningf("ManagementStateUnknown", "Unrecognized operator management state %q", operatorConfig.Spec.ManagementState)
 		return nil
 	}
-
-	/*******
-		***  I think all this can be deleted
-
-		kubeAPIServerOperator, err := c.openshiftConfigClient.ClusterOperators().Get("kube-apiserver", metav1.GetOptions{})
-		if apierrors.IsNotFound(err) {
-			kubeAPIServerOperator, err = c.openshiftConfigClient.ClusterOperators().Get("openshift-kube-apiserver-operator", metav1.GetOptions{})
-		}
-		if apierrors.IsNotFound(err) {
-			message := "clusteroperator/kube-apiserver not found"
-			c.eventRecorder.Warning("PrereqNotReady", message)
-			return fmt.Errorf(message)
-		}
-		if err != nil {
-			return err
-		}
-		if !clusteroperatorv1helpers.IsStatusConditionTrue(kubeAPIServerOperator.Status.Conditions, "Available") {
-			message := fmt.Sprintf("clusteroperator/%s is not Available", kubeAPIServerOperator.Name)
-			c.eventRecorder.Warning("PrereqNotReady", message)
-			return fmt.Errorf(message)
-		}
-
-		// block until config is obvserved
-		if len(operatorConfig.Spec.ObservedConfig.Raw) == 0 {
-			glog.Info("Waiting for observed configuration to be available")
-			return nil
-		}
-
-	     *********/
 
 	forceRequeue, err := syncServiceCatalogAPIServer_v311_00_to_latest(c, operatorConfig)
 	if forceRequeue && err != nil {
