@@ -17,8 +17,10 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	operatorv1 "github.com/openshift/api/operator/v1"
 	configv1client "github.com/openshift/client-go/config/clientset/versioned/typed/config/v1"
+
 	configv1helpers "github.com/openshift/library-go/pkg/config/clusteroperator/v1helpers"
 	"github.com/openshift/library-go/pkg/operator/events"
+	"github.com/openshift/library-go/pkg/operator/management"
 	"github.com/openshift/library-go/pkg/operator/resource/resourceapply"
 	operatorv1helpers "github.com/openshift/library-go/pkg/operator/v1helpers"
 )
@@ -61,7 +63,7 @@ func NewClusterOperatorStatusController(
 		versionGetter:         versionGetter,
 		clusterOperatorClient: clusterOperatorClient,
 		operatorClient:        operatorStatusProvider,
-		eventRecorder:         recorder,
+		eventRecorder:         recorder.WithComponentSuffix("status-controller"),
 
 		queue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "StatusSyncer-"+name),
 	}
@@ -113,9 +115,9 @@ func (c StatusSyncer) sync() error {
 	}
 	clusterOperatorObj := originalClusterOperatorObj.DeepCopy()
 
-	// if we are unmanaged, force everything to Unknown.
-	if detailedSpec.ManagementState == operatorv1.Unmanaged {
+	if detailedSpec.ManagementState == operatorv1.Unmanaged && !management.IsOperatorAlwaysManaged() {
 		clusterOperatorObj.Status = configv1.ClusterOperatorStatus{}
+
 		configv1helpers.SetStatusCondition(&clusterOperatorObj.Status.Conditions, configv1.ClusterOperatorStatusCondition{Type: configv1.OperatorAvailable, Status: configv1.ConditionUnknown, Reason: "Unmanaged"})
 		configv1helpers.SetStatusCondition(&clusterOperatorObj.Status.Conditions, configv1.ClusterOperatorStatusCondition{Type: configv1.OperatorProgressing, Status: configv1.ConditionUnknown, Reason: "Unmanaged"})
 		configv1helpers.SetStatusCondition(&clusterOperatorObj.Status.Conditions, configv1.ClusterOperatorStatusCondition{Type: configv1.OperatorFailing, Status: configv1.ConditionUnknown, Reason: "Unmanaged"})
@@ -132,10 +134,10 @@ func (c StatusSyncer) sync() error {
 	}
 
 	clusterOperatorObj.Status.RelatedObjects = c.relatedObjects
-	configv1helpers.SetStatusCondition(&clusterOperatorObj.Status.Conditions, unionCondition("Failing", operatorv1.ConditionTrue, currentDetailedStatus.Conditions...))
-	configv1helpers.SetStatusCondition(&clusterOperatorObj.Status.Conditions, unionCondition("Progressing", operatorv1.ConditionTrue, currentDetailedStatus.Conditions...))
-	configv1helpers.SetStatusCondition(&clusterOperatorObj.Status.Conditions, unionCondition("Available", operatorv1.ConditionFalse, currentDetailedStatus.Conditions...))
-	configv1helpers.SetStatusCondition(&clusterOperatorObj.Status.Conditions, unionCondition("Upgradeable", operatorv1.ConditionFalse, currentDetailedStatus.Conditions...))
+	configv1helpers.SetStatusCondition(&clusterOperatorObj.Status.Conditions, unionCondition("Failing", operatorv1.ConditionFalse, currentDetailedStatus.Conditions...))
+	configv1helpers.SetStatusCondition(&clusterOperatorObj.Status.Conditions, unionCondition("Progressing", operatorv1.ConditionFalse, currentDetailedStatus.Conditions...))
+	configv1helpers.SetStatusCondition(&clusterOperatorObj.Status.Conditions, unionCondition("Available", operatorv1.ConditionTrue, currentDetailedStatus.Conditions...))
+	configv1helpers.SetStatusCondition(&clusterOperatorObj.Status.Conditions, unionCondition("Upgradeable", operatorv1.ConditionTrue, currentDetailedStatus.Conditions...))
 
 	// TODO work out removal.  We don't always know the existing value, so removing early seems like a bad idea.  Perhaps a remove flag.
 	versions := c.versionGetter.GetVersions()
