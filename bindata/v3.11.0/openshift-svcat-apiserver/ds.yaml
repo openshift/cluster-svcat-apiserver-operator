@@ -4,7 +4,7 @@ metadata:
   labels:
     app: apiserver
   name: apiserver
-  namespace: openshift-service-catalog
+  namespace: openshift-service-catalog-apiserver
 spec:
   selector:
     matchLabels:

@@ -5,6 +5,6 @@ const (
 	KubeAPIServerNamespaceName            = "openshift-kube-apiserver"
 	UserSpecifiedGlobalConfigNamespace    = "openshift-config"
 	MachineSpecifiedGlobalConfigNamespace = "openshift-config-managed"
-	OperatorNamespace                     = "openshift-svcat-apiserver-operator"
-	TargetNamespaceName                   = "openshift-service-catalog"
+	OperatorNamespace                     = "openshift-service-catalog-apiserver-operator"
+	TargetNamespaceName                   = "openshift-service-catalog-apiserver"
 )

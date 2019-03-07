@@ -106,12 +106,12 @@ func TestProgressingCondition(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 
 			kubeClient := fake.NewSimpleClientset(
-				&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "serving-cert", Namespace: "openshift-service-catalog"}},
+				&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "serving-cert", Namespace: operatorclient.TargetNamespaceName}},
 				&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "etcd-client", Namespace: "kube-system"}},
 				&appsv1.DaemonSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:       "apiserver",
-						Namespace:  "openshift-service-catalog",
+						Namespace:  operatorclient.TargetNamespaceName,
 						Generation: tc.daemonSetGeneration,
 					},
 					Status: appsv1.DaemonSetStatus{
@@ -223,11 +223,11 @@ func TestAvailableStatus(t *testing.T) {
 			expectedStatus:          operatorv1.ConditionFalse,
 			expectedReason:          "NoDaemon",
 			expectedMessages:        []string{"daemonset/apiserver.openshift-svcat-apiserver: could not be retrieved"},
-			expectedFailingMessages: []string{"\"daemonsets\": TEST ERROR: fail to get daemonset/apiserver.openshift-service-catalog"},
+			expectedFailingMessages: []string{"\"daemonsets\": TEST ERROR: fail to get daemonset/apiserver.openshift-service-catalog-apiserver"},
 
 			daemonReactor: func(action kubetesting.Action) (handled bool, ret runtime.Object, err error) {
-				if action.GetVerb() == "get" && action.GetNamespace() == "openshift-service-catalog" && action.(kubetesting.GetAction).GetName() == "apiserver" {
-					return true, nil, errors.New("TEST ERROR: fail to get daemonset/apiserver.openshift-service-catalog")
+				if action.GetVerb() == "get" && action.GetNamespace() == operatorclient.TargetNamespaceName && action.(kubetesting.GetAction).GetName() == "apiserver" {
+					return true, nil, errors.New("TEST ERROR: fail to get daemonset/apiserver.openshift-service-catalog-apiserver")
 				}
 				return false, nil, nil
 			},
@@ -239,9 +239,9 @@ func TestAvailableStatus(t *testing.T) {
 			expectedMessages: []string{"no openshift-svcat-apiserver daemon pods available on any node."},
 
 			daemonReactor: func(action kubetesting.Action) (handled bool, ret runtime.Object, err error) {
-				if action.GetVerb() == "get" && action.GetNamespace() == "openshift-service-catalog" && action.(kubetesting.GetAction).GetName() == "apiserver" {
+				if action.GetVerb() == "get" && action.GetNamespace() == operatorclient.TargetNamespaceName && action.(kubetesting.GetAction).GetName() == "apiserver" {
 					return true, &appsv1.DaemonSet{
-						ObjectMeta: metav1.ObjectMeta{Name: "apiserver", Namespace: "openshift-service-catalog"},
+						ObjectMeta: metav1.ObjectMeta{Name: "apiserver", Namespace: operatorclient.TargetNamespaceName},
 						Status:     appsv1.DaemonSetStatus{NumberAvailable: 0},
 					}, nil
 				}
@@ -281,12 +281,12 @@ func TestAvailableStatus(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 
 			kubeClient := fake.NewSimpleClientset(
-				&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "serving-cert", Namespace: "openshift-service-catalog"}},
+				&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "serving-cert", Namespace: operatorclient.TargetNamespaceName}},
 				&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "etcd-client", Namespace: "kube-system"}},
 				&appsv1.DaemonSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:       "apiserver",
-						Namespace:  "openshift-service-catalog",
+						Namespace:  operatorclient.TargetNamespaceName,
 						Generation: 99,
 					},
 					Status: appsv1.DaemonSetStatus{

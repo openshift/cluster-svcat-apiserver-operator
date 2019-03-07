@@ -10,7 +10,7 @@ Once the operator detects the CR it will create the Service Catalog API Server C
 2. `make images`
 3. `docker tag openshift/origin-cluster-svcat-apiserver-operator:latest <yourdockerhubid>/origin-cluster-svcat-apiserver-operator:latest`
 4. `docker push <yourdockerhubid>/origin-cluster-svcat-apiserver-operator:latest`
-5. edit manifests/0000_61_openshift-svcat-apiserver-operator_08_deployment.yaml and update the containers/image to `<yourdockerhubid>/origin-cluster-svcat-apiserver-operator:latest` and set the pull policy to `Always`
+5. edit manifests/0000_61_openshift-service-catalog-apiserver-operator_08_deployment.yaml and update the containers/image to `<yourdockerhubid>/origin-cluster-svcat-apiserver-operator:latest` and set the pull policy to `Always`
 6.  `oc apply -f manifests`
 
 This will cause the creation of the cluster-svcat-apiserver-operator deployment 
@@ -30,9 +30,9 @@ spec:
 EOF
 ```
 Once the cluster `ServiceCatalogAPIServer` is found to exist and have a `managementState` of `Managed` the operator will create necessary resources in the
-`openshift-service-catalog` namespace for deploying the Service Catalog API Server.
+`openshift-service-catalog-apiserver` namespace for deploying the Service Catalog API Server.
 
-Watch for service catalog apiservers to come up in the openshift-service-catalog namespace.
+Watch for service catalog apiservers to come up in the openshift-service-catalog-apiserver namespace.
 
 ## Verification & debugging
 Nothing happens without the CR:
@@ -54,7 +54,7 @@ Review operator pod logs from the `openshift-svcat-apiserver` namespace to see d
 
 The operator deployment events will give you an overview of what it's done.  Ensure its not looping & review the events:
 ```
-$ oc describe deployment openshift-svcat-apiserver-operator -n openshift-svcat-apiserver-operator
+$ oc describe deployment openshift-service-catalog-apiserver-operator -n openshift-service-catalog-apiserver-operator
 ```
 
 
