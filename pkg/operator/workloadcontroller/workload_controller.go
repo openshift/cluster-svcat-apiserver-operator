@@ -9,6 +9,7 @@ import (
 	"github.com/golang/glog"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -28,6 +29,7 @@ import (
 	operatorv1client "github.com/openshift/client-go/operator/clientset/versioned/typed/operator/v1"
 	operatorv1informers "github.com/openshift/client-go/operator/informers/externalversions/operator/v1"
 	"github.com/openshift/library-go/pkg/operator/events"
+	"github.com/openshift/library-go/pkg/operator/v1helpers"
 )
 
 const (
@@ -107,11 +109,60 @@ func (c ServiceCatalogAPIServerOperator) sync() error {
 	switch operatorConfig.Spec.ManagementState {
 	case operatorsv1.Managed:
 	case operatorsv1.Unmanaged:
+		originalOperatorConfig := operatorConfig.DeepCopy()
+		v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorsv1.OperatorCondition{
+			Type:    operatorsv1.OperatorStatusTypeAvailable,
+			Status:  operatorsv1.ConditionUnknown,
+			Reason:  "Unmanaged",
+			Message: "the apiserver is in an unmanaged state, therefore its availability is unknown.",
+		})
+		v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorsv1.OperatorCondition{
+			Type:    operatorsv1.OperatorStatusTypeProgressing,
+			Status:  operatorsv1.ConditionFalse,
+			Reason:  "Unmanaged",
+			Message: "the apiserver is in an unmanaged state, therefore no changes are being applied.",
+		})
+		v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorsv1.OperatorCondition{
+			Type:    operatorsv1.OperatorStatusTypeFailing,
+			Status:  operatorsv1.ConditionFalse,
+			Reason:  "Unmanaged",
+			Message: "the apiserver is in an unmanaged state, therefore no operator actions are failing.",
+		})
+
+		if !equality.Semantic.DeepEqual(operatorConfig.Status, originalOperatorConfig.Status) {
+			if _, err := c.operatorConfigClient.ServiceCatalogAPIServers().UpdateStatus(operatorConfig); err != nil {
+				return err
+			}
+		}
 		return nil
 	case operatorsv1.Removed:
 		// TODO probably need to watch until the NS is really gone
 		if err := c.kubeClient.CoreV1().Namespaces().Delete(operatorclient.TargetNamespaceName, nil); err != nil && !apierrors.IsNotFound(err) {
 			return err
+		}
+		originalOperatorConfig := operatorConfig.DeepCopy()
+		v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorsv1.OperatorCondition{
+			Type:    operatorsv1.OperatorStatusTypeAvailable,
+			Status:  operatorsv1.ConditionTrue,
+			Reason:  "Removed",
+			Message: "the apiserver is in Removed state.",
+		})
+		v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorsv1.OperatorCondition{
+			Type:    operatorsv1.OperatorStatusTypeProgressing,
+			Status:  operatorsv1.ConditionFalse,
+			Reason:  "Removed",
+			Message: "the apiserver is in Removed state.",
+		})
+		v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorsv1.OperatorCondition{
+			Type:    operatorsv1.OperatorStatusTypeFailing,
+			Status:  operatorsv1.ConditionFalse,
+			Reason:  "Removed",
+			Message: "the apiserver is in Removed state.",
+		})
+		if !equality.Semantic.DeepEqual(operatorConfig.Status, originalOperatorConfig.Status) {
+			if _, err := c.operatorConfigClient.ServiceCatalogAPIServers().UpdateStatus(operatorConfig); err != nil {
+				return err
+			}
 		}
 		return nil
 	default:
