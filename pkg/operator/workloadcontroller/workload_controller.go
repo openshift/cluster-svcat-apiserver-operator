@@ -29,6 +29,7 @@ import (
 	operatorv1client "github.com/openshift/client-go/operator/clientset/versioned/typed/operator/v1"
 	operatorv1informers "github.com/openshift/client-go/operator/informers/externalversions/operator/v1"
 	"github.com/openshift/library-go/pkg/operator/events"
+	"github.com/openshift/library-go/pkg/operator/status"
 	"github.com/openshift/library-go/pkg/operator/v1helpers"
 )
 
@@ -39,6 +40,7 @@ const (
 
 type ServiceCatalogAPIServerOperator struct {
 	targetImagePullSpec string
+	versionRecorder     status.VersionGetter
 
 	operatorConfigClient    operatorv1client.ServiceCatalogAPIServersGetter
 	openshiftConfigClient   openshiftconfigclientv1.ConfigV1Interface
@@ -54,6 +56,7 @@ type ServiceCatalogAPIServerOperator struct {
 
 func NewWorkloadController(
 	targetImagePullSpec string,
+	versionRecorder status.VersionGetter,
 	operatorConfigInformer operatorv1informers.ServiceCatalogAPIServerInformer,
 	kubeInformersForServiceCatalogAPIServerNamespace kubeinformers.SharedInformerFactory,
 	kubeInformersForEtcdNamespace kubeinformers.SharedInformerFactory,
@@ -69,6 +72,7 @@ func NewWorkloadController(
 ) *ServiceCatalogAPIServerOperator {
 	c := &ServiceCatalogAPIServerOperator{
 		targetImagePullSpec:     targetImagePullSpec,
+		versionRecorder:         versionRecorder,
 		operatorConfigClient:    operatorConfigClient,
 		openshiftConfigClient:   openshiftConfigClient,
 		kubeClient:              kubeClient,
@@ -145,20 +149,21 @@ func (c ServiceCatalogAPIServerOperator) sync() error {
 			Type:    operatorsv1.OperatorStatusTypeAvailable,
 			Status:  operatorsv1.ConditionTrue,
 			Reason:  "Removed",
-			Message: "the apiserver is in Removed state.",
+			Message: "the apiserver is in the desired state (Removed).",
 		})
 		v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorsv1.OperatorCondition{
 			Type:    operatorsv1.OperatorStatusTypeProgressing,
 			Status:  operatorsv1.ConditionFalse,
 			Reason:  "Removed",
-			Message: "the apiserver is in Removed state.",
+			Message: "",
 		})
 		v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorsv1.OperatorCondition{
 			Type:    operatorsv1.OperatorStatusTypeFailing,
 			Status:  operatorsv1.ConditionFalse,
 			Reason:  "Removed",
-			Message: "the apiserver is in Removed state.",
+			Message: "",
 		})
+
 		if !equality.Semantic.DeepEqual(operatorConfig.Status, originalOperatorConfig.Status) {
 			if _, err := c.operatorConfigClient.ServiceCatalogAPIServers().UpdateStatus(operatorConfig); err != nil {
 				return err
