@@ -20,6 +20,8 @@ import (
 	"github.com/openshift/library-go/pkg/operator/status"
 	"github.com/openshift/library-go/pkg/operator/unsupportedconfigoverridescontroller"
 	"github.com/openshift/library-go/pkg/operator/v1helpers"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -84,8 +86,20 @@ func RunOperator(ctx *controllercmd.ControllerContext) error {
 		return err
 	}
 
+	// don't change any versions until we sync
+	versionRecorder := status.NewVersionGetter()
+	clusterOperator, err := configClient.ConfigV1().ClusterOperators().Get("service-catalog-apiserver", metav1.GetOptions{})
+	if err != nil && !errors.IsNotFound(err) {
+		return err
+	}
+	for _, version := range clusterOperator.Status.Versions {
+		versionRecorder.SetVersion(version.Name, version.Version)
+	}
+	versionRecorder.SetVersion("operator", os.Getenv("OPERATOR_IMAGE_VERSION"))
+
 	workloadController := workloadcontroller.NewWorkloadController(
 		os.Getenv("IMAGE"),
+		versionRecorder,
 		operatorConfigInformers.Operator().V1().ServiceCatalogAPIServers(),
 		kubeInformersForNamespaces.InformersFor(operatorclient.TargetNamespaceName),
 		kubeInformersForNamespaces.InformersFor(operatorclient.EtcdNamespaceName),
@@ -118,7 +132,7 @@ func RunOperator(ctx *controllercmd.ControllerContext) error {
 		),
 		configClient.ConfigV1(),
 		operatorClient,
-		status.NewVersionGetter(),
+		versionRecorder,
 		ctx.EventRecorder,
 	)
 

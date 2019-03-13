@@ -25,6 +25,7 @@ import (
 	configfake "github.com/openshift/client-go/config/clientset/versioned/fake"
 	operatorfake "github.com/openshift/client-go/operator/clientset/versioned/fake"
 	"github.com/openshift/library-go/pkg/operator/events"
+	"github.com/openshift/library-go/pkg/operator/status"
 	operatorv1helpers "github.com/openshift/library-go/pkg/operator/v1helpers"
 )
 
@@ -144,6 +145,7 @@ func TestProgressingCondition(t *testing.T) {
 				operatorConfigClient:    apiServiceOperatorClient.OperatorV1(),
 				openshiftConfigClient:   openshiftConfigClient.ConfigV1(),
 				apiregistrationv1Client: kubeAggregatorClient.ApiregistrationV1(),
+				versionRecorder:         status.NewVersionGetter(),
 			}
 
 			syncServiceCatalogAPIServer_v311_00_to_latest(operator, operatorConfig)
@@ -334,6 +336,7 @@ func TestAvailableStatus(t *testing.T) {
 				operatorConfigClient:    apiServiceOperatorClient.OperatorV1(),
 				openshiftConfigClient:   openshiftConfigClient.ConfigV1(),
 				apiregistrationv1Client: kubeAggregatorClient.ApiregistrationV1(),
+				versionRecorder:         status.NewVersionGetter(),
 			}
 
 			syncServiceCatalogAPIServer_v311_00_to_latest(operator, operatorConfig)

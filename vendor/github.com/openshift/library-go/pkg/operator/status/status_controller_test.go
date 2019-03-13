@@ -1,7 +1,6 @@
 package status
 
 import (
-	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -13,6 +12,7 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	operatorv1 "github.com/openshift/api/operator/v1"
 	"github.com/openshift/client-go/config/clientset/versioned/fake"
+
 	"github.com/openshift/library-go/pkg/config/clusteroperator/v1helpers"
 	"github.com/openshift/library-go/pkg/operator/events"
 )
@@ -20,18 +20,28 @@ import (
 func TestFailing(t *testing.T) {
 
 	testCases := []struct {
+		name                  string
 		conditions            []operatorv1.OperatorCondition
 		expectedFailingStatus configv1.ConditionStatus
 		expectedMessages      []string
 		expectedReason        string
 	}{
 		{
+			name:                  "no data",
+			conditions:            []operatorv1.OperatorCondition{},
+			expectedFailingStatus: configv1.ConditionUnknown,
+			expectedReason:        "NoData",
+		},
+		{
+			name: "one failing false",
 			conditions: []operatorv1.OperatorCondition{
 				{Type: "TypeAFailing", Status: operatorv1.ConditionFalse},
 			},
 			expectedFailingStatus: configv1.ConditionFalse,
+			expectedReason:        "AsExpected",
 		},
 		{
+			name: "one failing true",
 			conditions: []operatorv1.OperatorCondition{
 				{Type: "TypeAFailing", Status: operatorv1.ConditionTrue},
 			},
@@ -39,6 +49,7 @@ func TestFailing(t *testing.T) {
 			expectedReason:        "TypeAFailing",
 		},
 		{
+			name: "two present, one failing",
 			conditions: []operatorv1.OperatorCondition{
 				{Type: "TypeAFailing", Status: operatorv1.ConditionTrue, Message: "a message from type a"},
 				{Type: "TypeBFailing", Status: operatorv1.ConditionFalse},
@@ -50,6 +61,7 @@ func TestFailing(t *testing.T) {
 			},
 		},
 		{
+			name: "two present, second one failing",
 			conditions: []operatorv1.OperatorCondition{
 				{Type: "TypeAFailing", Status: operatorv1.ConditionFalse},
 				{Type: "TypeBFailing", Status: operatorv1.ConditionTrue, Message: "a message from type b"},
@@ -61,6 +73,7 @@ func TestFailing(t *testing.T) {
 			},
 		},
 		{
+			name: "many present, some failing",
 			conditions: []operatorv1.OperatorCondition{
 				{Type: "TypeAFailing", Status: operatorv1.ConditionFalse},
 				{Type: "TypeBFailing", Status: operatorv1.ConditionTrue, Message: "a message from type b\nanother message from type b"},
@@ -76,8 +89,8 @@ func TestFailing(t *testing.T) {
 			},
 		},
 	}
-	for name, tc := range testCases {
-		t.Run(fmt.Sprintf("%05d", name), func(t *testing.T) {
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
 			clusterOperatorClient := fake.NewSimpleClientset(&configv1.ClusterOperator{
 				ObjectMeta: metav1.ObjectMeta{Name: "OPERATOR_NAME", ResourceVersion: "12"},
 			})

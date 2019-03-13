@@ -25,6 +25,7 @@ import (
 	"github.com/openshift/library-go/pkg/operator/resource/resourcehash"
 	"github.com/openshift/library-go/pkg/operator/resource/resourcemerge"
 	"github.com/openshift/library-go/pkg/operator/resource/resourceread"
+	"github.com/openshift/library-go/pkg/operator/status"
 	"github.com/openshift/library-go/pkg/operator/v1helpers"
 )
 
@@ -191,6 +192,18 @@ func syncServiceCatalogAPIServer_v311_00_to_latest(c ServiceCatalogAPIServerOper
 			Status: operatorv1.ConditionFalse,
 		})
 	}
+
+	// if we are available, we need to try to set our versions correctly.
+	if v1helpers.IsOperatorConditionTrue(operatorConfig.Status.Conditions, operatorv1.OperatorStatusTypeAvailable) {
+		// we have the actual daemonset and we need the pull spec
+		operandVersion := status.VersionForOperand(
+			operatorclient.OperatorNamespace,
+			actualDaemonSet.Spec.Template.Spec.Containers[0].Image,
+			c.kubeClient.CoreV1(),
+			c.eventRecorder)
+		c.versionRecorder.SetVersion("service-catalog-apiserver", operandVersion)
+	}
+
 	if !equality.Semantic.DeepEqual(operatorConfig.Status, originalOperatorConfig.Status) {
 		if _, err := c.operatorConfigClient.ServiceCatalogAPIServers().UpdateStatus(operatorConfig); err != nil {
 			return false, err
