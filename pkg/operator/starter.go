@@ -131,6 +131,7 @@ func RunOperator(ctx *controllercmd.ControllerContext) error {
 			workloadcontroller.APIServiceReferences()...,
 		),
 		configClient.ConfigV1(),
+		configInformers.Config().V1().ClusterOperators(),
 		operatorClient,
 		versionRecorder,
 		ctx.EventRecorder,
