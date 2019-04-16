@@ -6,7 +6,7 @@ import (
 
 	"github.com/openshift/cluster-svcat-apiserver-operator/pkg/operator/operatorclient"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -188,8 +188,8 @@ func (c *ServiceCatalogAPIServerOperator) Run(workers int, stopCh <-chan struct{
 	defer utilruntime.HandleCrash()
 	defer c.queue.ShutDown()
 
-	glog.Infof("Starting OpenShiftSerCatAPIServerOperator")
-	defer glog.Infof("Shutting down OpenShiftSvCatAPIServerOperator")
+	klog.Infof("Starting OpenShiftSerCatAPIServerOperator")
+	defer klog.Infof("Shutting down OpenShiftSvCatAPIServerOperator")
 
 	// doesn't matter what workers say, only start one.
 	go wait.Until(c.runWorker, time.Second, stopCh)
