@@ -42,6 +42,8 @@ spec:
           value: registry.svc.ci.openshift.org/openshift/origin-v4.0:service-catalog
         - name: OPERATOR_IMAGE_VERSION
           value: "0.0.1-snapshot"
+        - name: OPERAND_IMAGE_VERSION
+          value: "0.0.1-snapshot"
       volumes:
       - name: serving-cert
         secret:
