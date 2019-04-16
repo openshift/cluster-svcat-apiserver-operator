@@ -551,6 +551,7 @@ spec:
         imagePullPolicy: IfNotPresent
         command: ["/usr/bin/service-catalog"]
         name: apiserver
+        terminationMessagePolicy: FallbackToLogsOnError
         ports:
         - containerPort: 6443
           protocol: TCP
