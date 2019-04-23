@@ -60,12 +60,11 @@ func RunOperator(ctx *controllercmd.ControllerContext) error {
 	operatorConfigInformers := operatorv1informers.NewSharedInformerFactory(operatorConfigClient, 10*time.Minute)
 	kubeInformersForNamespaces := v1helpers.NewKubeInformersForNamespaces(kubeClient,
 		"",
-		operatorclient.UserSpecifiedGlobalConfigNamespace,
-		operatorclient.MachineSpecifiedGlobalConfigNamespace,
+		operatorclient.GlobalUserSpecifiedConfigNamespace,
+		operatorclient.GlobalMachineSpecifiedConfigNamespace,
 		operatorclient.KubeAPIServerNamespaceName,
 		operatorclient.OperatorNamespace,
 		operatorclient.TargetNamespaceName,
-		"kube-system",
 	)
 	apiregistrationInformers := apiregistrationinformers.NewSharedInformerFactory(apiregistrationv1Client, 10*time.Minute)
 	configInformers := configinformers.NewSharedInformerFactory(configClient, 10*time.Minute)
@@ -102,9 +101,9 @@ func RunOperator(ctx *controllercmd.ControllerContext) error {
 		versionRecorder,
 		operatorConfigInformers.Operator().V1().ServiceCatalogAPIServers(),
 		kubeInformersForNamespaces.InformersFor(operatorclient.TargetNamespaceName),
-		kubeInformersForNamespaces.InformersFor(operatorclient.EtcdNamespaceName),
+		kubeInformersForNamespaces.InformersFor(operatorclient.GlobalUserSpecifiedConfigNamespace),
 		kubeInformersForNamespaces.InformersFor(operatorclient.KubeAPIServerNamespaceName),
-		kubeInformersForNamespaces.InformersFor(operatorclient.UserSpecifiedGlobalConfigNamespace),
+		kubeInformersForNamespaces.InformersFor(operatorclient.GlobalUserSpecifiedConfigNamespace),
 		apiregistrationInformers,
 		configInformers,
 		operatorConfigClient.OperatorV1(),
@@ -123,8 +122,8 @@ func RunOperator(ctx *controllercmd.ControllerContext) error {
 		"service-catalog-apiserver",
 		append(
 			[]configv1.ObjectReference{
-				{Resource: "namespaces", Name: operatorclient.UserSpecifiedGlobalConfigNamespace},
-				{Resource: "namespaces", Name: operatorclient.MachineSpecifiedGlobalConfigNamespace},
+				{Resource: "namespaces", Name: operatorclient.GlobalUserSpecifiedConfigNamespace},
+				{Resource: "namespaces", Name: operatorclient.GlobalMachineSpecifiedConfigNamespace},
 				{Resource: "namespaces", Name: operatorclient.OperatorNamespace},
 				{Resource: "namespaces", Name: operatorclient.TargetNamespaceName},
 			},
