@@ -19,6 +19,7 @@ spec:
       serviceAccountName: openshift-service-catalog-apiserver-operator
       containers:
       - name: operator
+        terminationMessagePolicy: FallbackToLogsOnError
         image: registry.svc.ci.openshift.org/openshift/origin-v4.0:cluster-svcat-apiserver-operator
         imagePullPolicy: IfNotPresent
         ports:
