@@ -108,7 +108,7 @@ func TestProgressingCondition(t *testing.T) {
 
 			kubeClient := fake.NewSimpleClientset(
 				&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "serving-cert", Namespace: operatorclient.TargetNamespaceName}},
-				&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "etcd-client", Namespace: "kube-system"}},
+				&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "etcd-client", Namespace: operatorclient.GlobalUserSpecifiedConfigNamespace}},
 				&appsv1.DaemonSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:       "apiserver",
@@ -284,7 +284,7 @@ func TestAvailableStatus(t *testing.T) {
 
 			kubeClient := fake.NewSimpleClientset(
 				&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "serving-cert", Namespace: operatorclient.TargetNamespaceName}},
-				&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "etcd-client", Namespace: "kube-system"}},
+				&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "etcd-client", Namespace: operatorclient.GlobalUserSpecifiedConfigNamespace}},
 				&appsv1.DaemonSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:       "apiserver",
