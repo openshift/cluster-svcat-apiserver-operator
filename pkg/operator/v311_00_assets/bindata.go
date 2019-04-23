@@ -532,7 +532,7 @@ spec:
         - --secure-port
         - "6443"
         - --etcd-servers
-        - "https://etcd.kube-system.svc.cluster.local:2379"
+        - "https://etcd.openshift-etcd.svc.cluster.local:2379"
         - --etcd-cafile
         - "/var/run/configmaps/etcd-serving-ca/ca-bundle.crt"
         - --etcd-certfile
@@ -615,7 +615,8 @@ spec:
         secret:
           secretName: etcd-client
       tolerations:
-      - operator: Exists`)
+      - operator: Exists
+`)
 
 func v3110OpenshiftSvcatApiserverDsYamlBytes() ([]byte, error) {
 	return _v3110OpenshiftSvcatApiserverDsYaml, nil
