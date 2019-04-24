@@ -1,5 +1,5 @@
 hash: a06fbc2ff3faa4867f7f90616edb37749b3ecfae5e80f954f79ca7430fc0ed56
-updated: 2019-04-16T13:59:18.289142147-04:00
+updated: 2019-04-24T09:21:23.081637527-04:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -134,8 +134,6 @@ imports:
   - proto
   - protoc-gen-gogo/descriptor
   - sortkeys
-- name: github.com/golang/glog
-  version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/groupcache
   version: 02826c3e79038b59d737d3b1c0a1d937f71a4433
   subpackages:
@@ -199,7 +197,7 @@ imports:
 - name: github.com/NYTimes/gziphandler
   version: 56545f4a5d46df9a6648819d1664c3a03a13ffdb
 - name: github.com/openshift/api
-  version: 0f522af5ff8bb3aa7a7181e163a7b9294b55cc4d
+  version: adc6b876336b0932967eacf865a544de4e19e605
   subpackages:
   - apps
   - apps/v1
@@ -268,7 +266,7 @@ imports:
   - operator/informers/externalversions/operator/v1
   - operator/listers/operator/v1
 - name: github.com/openshift/library-go
-  version: 1b1cfee06f448d0a55ed7499ebe76e4ed254cfc1
+  version: b428a47facd6a69e9618b29f9ea264e66648bf1f
   subpackages:
   - cmd/crd-schema-gen/generator
   - pkg/assets
@@ -858,7 +856,7 @@ imports:
   - pkg/util
   - pkg/util/proto
 - name: sigs.k8s.io/controller-tools
-  version: 4e23e49e5d401ca6ced86aa30262d0cf2488c504
+  version: 780b3ac5d310267eb6e9a8b6cfcce8bc4aa20b91
   repo: https://github.com/openshift/kubernetes-sigs-controller-tools
   subpackages:
   - pkg/crd/generator
