@@ -6,7 +6,6 @@ import (
 
 	"github.com/openshift/cluster-svcat-apiserver-operator/pkg/operator/operatorclient"
 
-	"github.com/golang/glog"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -15,6 +14,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	appsclientv1 "k8s.io/client-go/kubernetes/typed/apps/v1"
 	coreclientv1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/klog"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	apiregistrationv1client "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset/typed/apiregistration/v1"
 
@@ -75,7 +75,7 @@ func syncServiceCatalogAPIServer_v311_00_to_latest(c ServiceCatalogAPIServerOper
 	}
 
 	forceRollingUpdate = forceRollingUpdate || operatorConfig.ObjectMeta.Generation != operatorConfig.Status.ObservedGeneration || configMapModified
-	glog.V(5).Infof("forceRollingUpdate: generation mismatch: %v, configMapModified: %v", operatorConfig.ObjectMeta.Generation != operatorConfig.Status.ObservedGeneration, configMapModified)
+	klog.V(5).Infof("forceRollingUpdate: generation mismatch: %v, configMapModified: %v", operatorConfig.ObjectMeta.Generation != operatorConfig.Status.ObservedGeneration, configMapModified)
 	// our configmaps and secrets are in order, now it is time to create the DS
 	// TODO check basic preconditions here
 	actualDaemonSet, _, err := manageServiceCatalogAPIServerDaemonSet_v311_00_to_latest(c.kubeClient.AppsV1(), c.eventRecorder, c.targetImagePullSpec, operatorConfig, operatorConfig.Status.Generations, forceRollingUpdate)
@@ -181,14 +181,14 @@ func syncServiceCatalogAPIServer_v311_00_to_latest(c ServiceCatalogAPIServerOper
 			message = message + err.Error() + "\n"
 		}
 		v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorv1.OperatorCondition{
-			Type:    workloadFailingCondition,
+			Type:    workloadDegradedCondition,
 			Status:  operatorv1.ConditionTrue,
 			Message: message,
 			Reason:  "SyncError",
 		})
 	} else {
 		v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorv1.OperatorCondition{
-			Type:   workloadFailingCondition,
+			Type:   workloadDegradedCondition,
 			Status: operatorv1.ConditionFalse,
 		})
 	}
@@ -213,7 +213,7 @@ func syncServiceCatalogAPIServer_v311_00_to_latest(c ServiceCatalogAPIServerOper
 	if len(errors) > 0 {
 		return true, nil
 	}
-	if !v1helpers.IsOperatorConditionFalse(operatorConfig.Status.Conditions, operatorv1.OperatorStatusTypeFailing) {
+	if !v1helpers.IsOperatorConditionFalse(operatorConfig.Status.Conditions, operatorv1.OperatorStatusTypeDegraded) {
 		return true, nil
 	}
 	if !v1helpers.IsOperatorConditionFalse(operatorConfig.Status.Conditions, operatorv1.OperatorStatusTypeProgressing) {
