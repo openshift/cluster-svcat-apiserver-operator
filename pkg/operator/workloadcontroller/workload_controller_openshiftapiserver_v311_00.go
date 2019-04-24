@@ -181,14 +181,14 @@ func syncServiceCatalogAPIServer_v311_00_to_latest(c ServiceCatalogAPIServerOper
 			message = message + err.Error() + "\n"
 		}
 		v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorv1.OperatorCondition{
-			Type:    workloadFailingCondition,
+			Type:    workloadDegradedCondition,
 			Status:  operatorv1.ConditionTrue,
 			Message: message,
 			Reason:  "SyncError",
 		})
 	} else {
 		v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorv1.OperatorCondition{
-			Type:   workloadFailingCondition,
+			Type:   workloadDegradedCondition,
 			Status: operatorv1.ConditionFalse,
 		})
 	}
@@ -213,7 +213,7 @@ func syncServiceCatalogAPIServer_v311_00_to_latest(c ServiceCatalogAPIServerOper
 	if len(errors) > 0 {
 		return true, nil
 	}
-	if !v1helpers.IsOperatorConditionFalse(operatorConfig.Status.Conditions, operatorv1.OperatorStatusTypeFailing) {
+	if !v1helpers.IsOperatorConditionFalse(operatorConfig.Status.Conditions, operatorv1.OperatorStatusTypeDegraded) {
 		return true, nil
 	}
 	if !v1helpers.IsOperatorConditionFalse(operatorConfig.Status.Conditions, operatorv1.OperatorStatusTypeProgressing) {

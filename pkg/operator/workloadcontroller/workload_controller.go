@@ -34,8 +34,8 @@ import (
 )
 
 const (
-	workloadFailingCondition = "WorkloadFailing"
-	workQueueKey             = "key"
+	workloadDegradedCondition = "WorkloadDegraded"
+	workQueueKey              = "key"
 )
 
 type ServiceCatalogAPIServerOperator struct {
@@ -127,10 +127,10 @@ func (c ServiceCatalogAPIServerOperator) sync() error {
 			Message: "the apiserver is in an unmanaged state, therefore no changes are being applied.",
 		})
 		v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorsv1.OperatorCondition{
-			Type:    operatorsv1.OperatorStatusTypeFailing,
+			Type:    operatorsv1.OperatorStatusTypeDegraded,
 			Status:  operatorsv1.ConditionFalse,
 			Reason:  "Unmanaged",
-			Message: "the apiserver is in an unmanaged state, therefore no operator actions are failing.",
+			Message: "the apiserver is in an unmanaged state, therefore no operator actions are degraded.",
 		})
 
 		if !equality.Semantic.DeepEqual(operatorConfig.Status, originalOperatorConfig.Status) {
@@ -158,7 +158,7 @@ func (c ServiceCatalogAPIServerOperator) sync() error {
 			Message: "",
 		})
 		v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorsv1.OperatorCondition{
-			Type:    operatorsv1.OperatorStatusTypeFailing,
+			Type:    operatorsv1.OperatorStatusTypeDegraded,
 			Status:  operatorsv1.ConditionFalse,
 			Reason:  "Removed",
 			Message: "",
