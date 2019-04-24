@@ -1,5 +1,5 @@
-hash: 8c02314ac422760dbfcc81a01dbcb3e8261b4b779f18ff4b301c28a1ad96677a
-updated: 2019-03-28T11:44:31.533690541-04:00
+hash: ffa458d2779ddfedd6ecefbc5547f13fd7e2edadb41877931e3cbd00603a37e4
+updated: 2019-04-10T10:12:27.477638805-04:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -202,7 +202,7 @@ imports:
 - name: github.com/NYTimes/gziphandler
   version: 56545f4a5d46df9a6648819d1664c3a03a13ffdb
 - name: github.com/openshift/api
-  version: ad6339a9e4ce20fffe56b91dc9c9ee7a4d04ebd7
+  version: b9d3a68a3adcd9ad4d8dfea44c44a030ca37db41
   subpackages:
   - apps
   - apps/v1
@@ -271,7 +271,7 @@ imports:
   - operator/informers/externalversions/operator/v1
   - operator/listers/operator/v1
 - name: github.com/openshift/library-go
-  version: ce0e892919bd98ca70214f34ba4d59428f76bc3c
+  version: ca7aee43e8adca319fa4937d9a4e7f57c5e02b9b
   subpackages:
   - cmd/crd-schema-gen/generator
   - pkg/assets
@@ -326,7 +326,7 @@ imports:
 - name: github.com/PuerkitoBio/urlesc
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/rogpeppe/go-internal
-  version: bb30e2a7ca3553a66c6a740eb5ebe72f9d35ef0e
+  version: 438578804ca6f31be148c27683afc419ce47c06e
   subpackages:
   - modfile
   - module
@@ -814,6 +814,8 @@ imports:
   - namer
   - parser
   - types
+- name: k8s.io/klog
+  version: aaeac2fedbead93263ae78b80849cac7ff5a5fbb
 - name: k8s.io/kube-aggregator
   version: 4764f3a1991175f477682bbba516e97fab77b19f
   subpackages:
