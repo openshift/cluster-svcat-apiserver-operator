@@ -3,3 +3,5 @@ kind: Namespace
 metadata:
   labels:
   name: openshift-service-catalog-apiserver-operator
+  annotations:
+    openshift.io/node-selector: ""

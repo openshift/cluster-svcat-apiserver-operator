@@ -638,7 +638,10 @@ kind: Namespace
 metadata:
   name: openshift-service-catalog-apiserver
   labels:
-    openshift.io/run-level: "1"`)
+    openshift.io/run-level: "1"
+  annotations:
+    openshift.io/node-selector: ""
+`)
 
 func v3110OpenshiftSvcatApiserverNsYamlBytes() ([]byte, error) {
 	return _v3110OpenshiftSvcatApiserverNsYaml, nil
