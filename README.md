@@ -1,63 +1,94 @@
 # cluster-svcat-apiserver-operator
-The cluster-svcat-apiserver-operator installs and maintains openshift/service-catalog on a cluster.  This operator only deals with the API Server portion of Service Catalog; see also the `cluster-svcat-controller-manager-operator`.
+The cluster-svcat-apiserver-operator installs and maintains a singleton instance of the OpenShift Service Catalog on a cluster.  Service Catalog is actually comprised of an aggregated API server and a controller manager; this operator only deals with the API Server portion of Service Catalog.  See the [cluster-svcat-controller-manager-operator](https://github.com/openshift/cluster-svcat-controller-manager-operator) for the operator responsible for the controller manager component of Service Catalog.
 
-Note that the manifests do not create the Cluster Operator or the ServiceCatalogAPIServer custom resource.  While the CVO installs the Service Catalog operators, we don't want Service Catalog installed by default.  The cluster admin must create the ServiceCatalogAPIServer CR to cause the operator to perform the installation ([see below](#Trigger-installation-of-Service-Catalog-API-Server))
+It should be noted this repo was initially copied from the OpenShift API Server Operator (https://github.com/openshift/cluster-openshift-apiserver-operator) and we generally try to keep it in sync with fixes and updates that are applicable.
 
-Once the operator detects the CR it will create the Service Catalog API Server Cluster Operator resource and proceed with reconciling the Service Catalog API Server deployment.
+[The Cluster Version Operator](https://github.com/openshift/cluster-version-operator) installs cluster operators by collecting the files within each cluster operator's manifest directory, bundling them into a release payload, and then `oc apply`ing them.  Note that unlike most cluster operators, this operator's configuration specifies that the initial management state of the Operator is `Removed`.  That is, the cluster operator is installed and running, but the operand is not.
 
-## Deployment the operator prior to CVO integration
-1. Use openshift/installer to install a cluster.  Skip to step 6 if you want to use pre-built operator images.
-2. `make images`
-3. `docker tag openshift/origin-cluster-svcat-apiserver-operator:latest <yourdockerhubid>/origin-cluster-svcat-apiserver-operator:latest`
-4. `docker push <yourdockerhubid>/origin-cluster-svcat-apiserver-operator:latest`
-5. edit manifests/0000_61_openshift-service-catalog-apiserver-operator_08_deployment.yaml and update the containers/image to `<yourdockerhubid>/origin-cluster-svcat-apiserver-operator:latest` and set the pull policy to `Always`
-6.  `oc apply -f manifests`
+This operator is installed to the `openshift-service-catalog-apiserver-operator` namespace.  It installs the Service Catalog API Server into the `openshift-service-catalog-apiserver` namespace.  In prior versions, both the Service Catalog API Server and Controller Manager were installed to kube-service-catalog.  This change keeps with how the OpenShift API Server & Controller Manager are managed and makes some aspects of servicability easier.
 
-This will cause the creation of the cluster-svcat-apiserver-operator deployment 
-and associated resources.  The operator waits for creation of the `ServiceCatalogAPIServer`
-custom resource before doing any real work including creating the Cluster Operator `openshift-svcat-apiserver`.  
 
-## Trigger installation of Service Catalog API Server
-Create the `ServiceCatalogAPIServer` CR to trigger the installation of Service Catalog:
+## Installing Service Catalog
+To enable and install Service Catalog, the cluster admin must modify two Service Catalog custom resources and change the `ManagementState` to `Managed`. 
 ```
-$ cat <<'EOF' | oc create -f -
-apiVersion: operator.openshift.io/v1
-kind: ServiceCatalogAPIServer
-metadata:
-  name: cluster
-spec:
-  managementState: Managed
-EOF
+$ oc edit ServiceCatalogAPIServer
 ```
-Once the cluster `ServiceCatalogAPIServer` is found to exist and have a `managementState` of `Managed` the operator will create necessary resources in the
-`openshift-service-catalog-apiserver` namespace for deploying the Service Catalog API Server.
+locate the `managementState` and change `Removed` to `Managed`.  Repeat for the controller-manager:
+```
+$ oc edit ServiceCatalogControllerManager
+```
+note the latter resource is actually from the [cluster-svcat-controller-manager-operator](https://github.com/openshift/cluster-svcat-controller-manager-operator).  The apiserver operator will see the change in the desired state and create necessary resources in the `openshift-service-catalog-apiserver` namespace for deploying the Service Catalog API Server.
 
-Watch for service catalog apiservers to come up in the openshift-service-catalog-apiserver namespace.
 
 ## Verification & debugging
-Nothing happens without the CR:
+Review the cluster operator status, it should report `Available` if it is in the desired state.  Although a bit contrary to the notion of "available", it should be pointed out that when the managementState is `Removed` and Service Catalog is not installed, the operator should be reporting Available=true because it is in the desired state.
 ```
-$ oc get servicecatalogapiservers
-NAME      AGE
-cluster     10m
+$ oc get clusteroperators service-catalog-apiserver
+NAME                        VERSION                        AVAILABLE   PROGRESSING   DEGRADED   SINCE
+service-catalog-apiserver   4.1.0-0.ci-2019-05-01-061138   True        False         False      3m57s
 ```
-If the state is `Managed` the operator will install Service Catalog API Server.  You can remove the deployment by setting the state to `Removed`.  
-
-Once the CR is created the operator should create a new ClusterOperator resource:
+View the operator pod logs:
 ```
-oc get clusteroperator service-catalog-apiserver
-NAME                        VERSION   AVAILABLE   PROGRESSING   FAILING   SINCE
-service-catalog-apiserver             True        False         False     1m
+$ oc logs deployment/openshift-service-catalog-apiserver-operator -n openshift-service-catalog-apiserver-operator
 ```
-Review operator pod logs from the `openshift-svcat-apiserver` namespace to see details of the operator processing.
-
-
-The operator deployment events will give you an overview of what it's done.  Ensure its not looping & review the events:
+The events present a good summary of actions the operator has taken to reach the desired state:
 ```
-$ oc describe deployment openshift-service-catalog-apiserver-operator -n openshift-service-catalog-apiserver-operator
+$ oc get events --sort-by='.lastTimestamp'  -n openshift-service-catalog-apiserver-operator
 ```
 
+If the state is `Managed` the operator will install Service Catalog API Server.  You can request the Service Catalog deployment to be removed by setting the state to `Removed`.  
 
+## Hacking with your own Operator or Operand
+You can make changes to the operator and deploy it to your cluster.  First you disable the CVO so it doesn't overwrite your changes from what is in the release payload:
+```
+$ oc scale --replicas 0 -n openshift-cluster-version deployments/cluster-version-operator
+```
+this is a big hammer, you could instead just tell the CVO your operator should be unmanged, see [Setting Objects unmanaged](https://github.com/openshift/cluster-version-operator/blob/master/docs/dev/clusterversion.md#setting-objects-unmanaged)
 
+Build and push your newly built image to a repo:
+```
+$ make images
+$ docker tag openshift/origin-cluster-svcat-apiserver-operator:latest jboyd01/origin-cluster-svcat-apiserver-operator:xx
+$ docker push jboyd01/origin-cluster-svcat-apiserver-operator:xx
+```
+and then update the manifest to specify your operator  image:
+```
+$ oc edit deployment -n openshift-service-catalog-apiserver-operator
+```
+locate the image and change the image and pull policy:
+```
+        image: registry.svc.ci.openshift.org/ocp/4.1-2019-05-01-061138@sha256:de5e1c8a2605f75b71705a933c31f4dff3ff1ae860d7a86d771dbe2043a4cea0
+        imagePullPolicy: IfNotPresent
+```
+to
+```
+        image: docker.io/jboyd01/origin-cluster-svcat-apiserver-operator:xx
+        imagePullPolicy: Always
+```
+This will cause your dev operator image to be pulled down and deployed.  When you want to deploy a newly built image just scale your operator to zero and right back to one:
+```
+$ oc scale --replicas 0 -n openshift-service-catalog-apiserver-operator deployments/openshift-service-catalog-apiserver-operator
+$ oc scale --replicas 1 -n openshift-service-catalog-apiserver-operator deployments/openshift-service-catalog-apiserver-operator
+```
 
+If you want your own Service Catalog API Server to be deployed you follow a simlar process but instead update the deployment's IMAGE environment variable:
+```
+        env:
+        - name: IMAGE
+          value: registry.svc.ci.openshift.org/ocp/4.1-2019-05-01-061138@sha256:cc22f2af68a261c938fb1ec9a9e94643eba23a3bb8c9e22652139f80ee57681b
+```
+and change the value to your own repo, something like
+```
+        env:
+        - name: IMAGE
+          value: docker.io/jboyd01/service-catalog:latest
+```
+## Read about the CVO if you haven't yet
+Consider this required reading - its vital to understanding how the operator should work and why:
+* https://github.com/openshift/cluster-version-operator#cluster-version-operator-cvo
+* https://github.com/openshift/cluster-version-operator/tree/master/docs/dev
 
+## Other development notes
+If you make changes to the yaml resources under `bindata` you must run `make update-generated` to update the go source files which are responsible for creating the Service Catalog operand deployment resources.
+
+When picking up new versions of dependencies, use `make update-deps`.  Generally you want to mirror the `glide.yaml` and dependency updates driven from the OpenShift apiserver operator.
