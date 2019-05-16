@@ -538,6 +538,8 @@ spec:
         - "/var/run/secrets/etcd-client/tls.crt"
         - --etcd-keyfile
         - "/var/run/secrets/etcd-client/tls.key"
+        - --etcd-prefix
+        - "/servicecatalog"
         - --cors-allowed-origins
         - "localhost"
         - --enable-admission-plugins
