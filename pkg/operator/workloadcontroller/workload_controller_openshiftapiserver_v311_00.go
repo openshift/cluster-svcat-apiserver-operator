@@ -29,12 +29,33 @@ import (
 	"github.com/openshift/library-go/pkg/operator/v1helpers"
 )
 
+var removedIgnoredCondition = operatorv1.OperatorCondition{
+	Type:    "RemovalRequestIgnored",
+	Status:  operatorv1.ConditionTrue,
+	Reason:  "Unable to automatically remove Service Catalog once installed.",
+	Message: "Unable to automatically remove Service Catalog once installed. Request to remove will be ignored. See documentation for more details.",
+}
+
+func updateStatusWithRemovedIgnoredCondition(c ServiceCatalogAPIServerOperator, originalOperatorConfig *operatorv1.ServiceCatalogAPIServer) (bool, error) {
+	operatorConfig := originalOperatorConfig.DeepCopy()
+
+	existingCondition := v1helpers.FindOperatorCondition(operatorConfig.Status.Conditions, removedIgnoredCondition.Type)
+	if existingCondition == nil {
+		v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, removedIgnoredCondition)
+		if _, err := c.operatorConfigClient.ServiceCatalogAPIServers().UpdateStatus(operatorConfig); err != nil {
+			return false, err
+		}
+	}
+	return true, nil
+}
+
 // syncServiceCatalogAPIServer_v311_00_to_latest takes care of synchronizing (not upgrading) the thing we're managing.
 // most of the time the sync method will be good for a large span of minor versions
 func syncServiceCatalogAPIServer_v311_00_to_latest(c ServiceCatalogAPIServerOperator, originalOperatorConfig *operatorv1.ServiceCatalogAPIServer) (bool, error) {
 	errors := []error{}
 	var err error
 	operatorConfig := originalOperatorConfig.DeepCopy()
+	v1helpers.RemoveOperatorCondition(&operatorConfig.Status.Conditions, removedIgnoredCondition.Type)
 
 	directResourceResults := resourceapply.ApplyDirectly(c.kubeClient, c.eventRecorder, v311_00_assets.Asset,
 		"v3.11.0/openshift-svcat-apiserver/ns.yaml",
