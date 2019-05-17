@@ -83,6 +83,42 @@ and change the value to your own repo, something like
         - name: IMAGE
           value: docker.io/jboyd01/service-catalog:latest
 ```
+
+When testing changes to the operator, remember to validate with a simulated fresh cluster install.  This should include:
+1) ensure Service Catalog API Server is not installed
+2) disabling the cvo (`oc scale --replicas 0 -n openshift-cluster-version deployments/cluster-version-operator`) and operator (`oc scale --replicas 0 -n openshift-service-catalog-apiserver-operator deployments/openshift-service-catalog-apiserver-operator`)
+3) deleting the custom resource ServiceCatalogAPIServers (`oc delete servicecatalogapiservers cluster`)
+4) creating a fresh CR (`oc apply -f manifests/03_config.cr.yaml`)
+5) deleting the ClusterOperator resource (`oc delete clusteroperator service-catalog-apiserver`)
+6) Update the `manifests/08_cluster-operator.yaml` to reflect your updated operator image
+7) deploy your operator with `$ oc apply -f manifests/08_cluster-operator.yaml`
+
+Make sure the cluster operator comes up and sets the status conditions as follows:
+```
+$ oc get clusteroperator service-catalog-apiserver -o yaml
+apiVersion: config.openshift.io/v1
+kind: ClusterOperator
+metadata:
+.......
+spec: {}
+  status:
+    conditions:
+    - lastTransitionTime: 2019-05-17T01:42:33Z
+      message: the apiserver is in the desired state (Removed).
+      reason: Removed
+      status: "True"
+      type: Available
+    - lastTransitionTime: 2019-05-17T01:41:53Z
+      reason: Removed
+      status: "False"
+      type: Progressing
+    - lastTransitionTime: 2019-05-17T01:36:42Z
+      reason: Removed
+      status: "False"
+      type: Degraded
+```
+
+
 ## Read about the CVO if you haven't yet
 Consider this required reading - its vital to understanding how the operator should work and why:
 * https://github.com/openshift/cluster-version-operator#cluster-version-operator-cvo
