@@ -10,7 +10,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -114,6 +113,7 @@ func (c ServiceCatalogAPIServerOperator) sync() error {
 	case operatorsv1.Managed:
 	case operatorsv1.Unmanaged:
 		originalOperatorConfig := operatorConfig.DeepCopy()
+		v1helpers.RemoveOperatorCondition(&operatorConfig.Status.Conditions, removedIgnoredCondition.Type)
 		v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorsv1.OperatorCondition{
 			Type:    operatorsv1.OperatorStatusTypeAvailable,
 			Status:  operatorsv1.ConditionUnknown,
@@ -140,33 +140,42 @@ func (c ServiceCatalogAPIServerOperator) sync() error {
 		}
 		return nil
 	case operatorsv1.Removed:
-		// TODO probably need to watch until the NS is really gone
-		if err := c.kubeClient.CoreV1().Namespaces().Delete(operatorclient.TargetNamespaceName, nil); err != nil && !apierrors.IsNotFound(err) {
-			return err
-		}
-		originalOperatorConfig := operatorConfig.DeepCopy()
-		v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorsv1.OperatorCondition{
-			Type:    operatorsv1.OperatorStatusTypeAvailable,
-			Status:  operatorsv1.ConditionTrue,
-			Reason:  "Removed",
-			Message: "the apiserver is in the desired state (Removed).",
-		})
-		v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorsv1.OperatorCondition{
-			Type:    operatorsv1.OperatorStatusTypeProgressing,
-			Status:  operatorsv1.ConditionFalse,
-			Reason:  "Removed",
-			Message: "",
-		})
-		v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorsv1.OperatorCondition{
-			Type:    operatorsv1.OperatorStatusTypeDegraded,
-			Status:  operatorsv1.ConditionFalse,
-			Reason:  "Removed",
-			Message: "",
-		})
+		// 4.1 GA TAKE NOTICE -- don't actually take any action to uninstall.  There are no good options since we don't delete the
+		// API Service and we don't want to because of secrets with ownerref & GC - see BZ https://bugzilla.redhat.com/show_bug.cgi?id=1711043
+		// so don't delete the namespace.  If Admins really want to remove Service Catalog they will read the doc that says to contact support
+		// (or contact support directly) and be talked through the necessity to understand the complexities of removing the aggregated API service.
+		// This all will be addressed in 4.1.z ASAP.
+		//
+		if _, err := c.kubeClient.CoreV1().Namespaces().Get(operatorclient.TargetNamespaceName, metav1.GetOptions{}); err == nil {
+			updateStatusWithRemovedIgnoredCondition(c, operatorConfig)
+		} else {
+			// either the cluster admin manually deleted the namespace or this is the initial deployment
+			// of the operator in the cluster.  No operand namespace, set things happy.
+			originalOperatorConfig := operatorConfig.DeepCopy()
+			v1helpers.RemoveOperatorCondition(&operatorConfig.Status.Conditions, removedIgnoredCondition.Type)
+			v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorsv1.OperatorCondition{
+				Type:    operatorsv1.OperatorStatusTypeAvailable,
+				Status:  operatorsv1.ConditionTrue,
+				Reason:  "Removed",
+				Message: "the apiserver is in the desired state (Removed).",
+			})
+			v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorsv1.OperatorCondition{
+				Type:    operatorsv1.OperatorStatusTypeProgressing,
+				Status:  operatorsv1.ConditionFalse,
+				Reason:  "Removed",
+				Message: "",
+			})
+			v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorsv1.OperatorCondition{
+				Type:    operatorsv1.OperatorStatusTypeDegraded,
+				Status:  operatorsv1.ConditionFalse,
+				Reason:  "Removed",
+				Message: "",
+			})
 
-		if !equality.Semantic.DeepEqual(operatorConfig.Status, originalOperatorConfig.Status) {
-			if _, err := c.operatorConfigClient.ServiceCatalogAPIServers().UpdateStatus(operatorConfig); err != nil {
-				return err
+			if !equality.Semantic.DeepEqual(operatorConfig.Status, originalOperatorConfig.Status) {
+				if _, err := c.operatorConfigClient.ServiceCatalogAPIServers().UpdateStatus(operatorConfig); err != nil {
+					return err
+				}
 			}
 		}
 		return nil
