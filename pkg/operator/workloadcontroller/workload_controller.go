@@ -12,9 +12,12 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/dynamic"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
@@ -44,6 +47,7 @@ type ServiceCatalogAPIServerOperator struct {
 
 	operatorConfigClient    operatorv1client.ServiceCatalogAPIServersGetter
 	openshiftConfigClient   openshiftconfigclientv1.ConfigV1Interface
+	dynamicClient           dynamic.Interface
 	kubeClient              kubernetes.Interface
 	apiregistrationv1Client apiregistrationv1client.ApiregistrationV1Interface
 	eventRecorder           events.Recorder
@@ -69,12 +73,14 @@ func NewWorkloadController(
 	kubeClient kubernetes.Interface,
 	apiregistrationv1Client apiregistrationv1client.ApiregistrationV1Interface,
 	eventRecorder events.Recorder,
+	dynamicClient dynamic.Interface,
 ) *ServiceCatalogAPIServerOperator {
 	c := &ServiceCatalogAPIServerOperator{
 		targetImagePullSpec:     targetImagePullSpec,
 		versionRecorder:         versionRecorder,
 		operatorConfigClient:    operatorConfigClient,
 		openshiftConfigClient:   openshiftConfigClient,
+		dynamicClient:           dynamicClient,
 		kubeClient:              kubeClient,
 		apiregistrationv1Client: apiregistrationv1Client,
 		eventRecorder:           eventRecorder,
@@ -140,10 +146,24 @@ func (c ServiceCatalogAPIServerOperator) sync() error {
 		}
 		return nil
 	case operatorsv1.Removed:
+		// delete the owner references from the service bindings
+		if err := c.deleteOwnerRefFromServiceBindings(); err != nil && !apierrors.IsNotFound(err) {
+			return err
+		}
+
 		// TODO probably need to watch until the NS is really gone
 		if err := c.kubeClient.CoreV1().Namespaces().Delete(operatorclient.TargetNamespaceName, nil); err != nil && !apierrors.IsNotFound(err) {
 			return err
 		}
+
+		// delete the apiserver once we're done
+		apiname := fmt.Sprintf("%s.%s", apiServiceGroupVersions[0].Version, apiServiceGroupVersions[0].Group)
+		if err := c.apiregistrationv1Client.APIServices().Delete(apiname, nil); err != nil && !apierrors.IsNotFound(err) {
+			klog.Warningf("we had a problem deleting apiservice %s : %v", apiname, err)
+			return err
+		}
+		klog.Infof("apiservice %s deleted", apiname)
+
 		originalOperatorConfig := operatorConfig.DeepCopy()
 		v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorsv1.OperatorCondition{
 			Type:    operatorsv1.OperatorStatusTypeAvailable,
@@ -275,4 +295,71 @@ func (c *ServiceCatalogAPIServerOperator) namespaceEventHandler() cache.Resource
 			}
 		},
 	}
+}
+
+func (c ServiceCatalogAPIServerOperator) deleteOwnerRefFromServiceBindings() error {
+	// Get service bindings
+	gvr := schema.GroupVersionResource{
+		Group:    "servicecatalog.k8s.io",
+		Version:  "v1beta1",
+		Resource: "servicebindings"} // lowercase plural is important
+
+	// get all of the service bindings
+	bindings, err := c.dynamicClient.Resource(gvr).List(metav1.ListOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			klog.Info("No service bindings found, nothing to delete.")
+			return nil
+		} else if apierrors.IsServiceUnavailable(err) {
+			klog.Info("service catalog apiserver has shutdown, nothing to delete.")
+			return nil
+		}
+		klog.Errorf("Problem getting the bindings list. %v", err)
+		return err
+	}
+
+	klog.Infof("we have %d binding items", len(bindings.Items))
+	for _, binding := range bindings.Items {
+		namespace := binding.GetNamespace()
+
+		// get the secret name
+		secretName, exists, err := unstructured.NestedString(binding.Object, "spec", "secretName")
+		if err != nil {
+			klog.Errorf("could not get secretName string from binding %s: %v", binding.GetName(), err)
+			return err
+		}
+		if !exists {
+			klog.Warningf("binding exists without a secretName! Nothing to delete.")
+			continue
+		}
+
+		klog.Infof("our binding has a secret %s in namespace %s", secretName, namespace)
+
+		// Get the service binding's secret
+		secret, err := c.kubeClient.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
+		if apierrors.IsNotFound(err) {
+			// if we can't find the secret for the service binding, continue
+			klog.Warningf("secret %s for binding %s not found, skipping", binding.GetName(), secretName)
+			continue
+		} else if err != nil {
+			klog.Errorf("Can not get secret %s because of %v", secretName, err)
+			return err
+		}
+
+		// Get rid of the OwnerReferences
+		for i, owner := range secret.OwnerReferences {
+			if owner.APIVersion == "servicecatalog.k8s.io/v1beta1" {
+				klog.Infof("Deleting the servicecatalog owner references from secret %s", secret.Name)
+				// DELETE THE OWNER REFERENCE
+				secret.OwnerReferences = append(secret.OwnerReferences[:i], secret.OwnerReferences[i+1:]...)
+			}
+		}
+
+		_, err = c.kubeClient.CoreV1().Secrets(namespace).Update(secret)
+		if err != nil {
+			klog.Errorf("Problem updating secret %s on binding %s: %v", secretName, binding.GetName(), err.Error())
+			return err
+		}
+	}
+	return nil
 }
