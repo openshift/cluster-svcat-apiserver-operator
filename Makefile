@@ -33,6 +33,11 @@ clean:
 	$(RM) ./cluster-svcat-apiserver-operator
 .PHONY: clean
 
+GO_TEST_PACKAGES :=./pkg/... ./cmd/...
+
+.PHONY: test-e2e
+test-e2e: GO_TEST_PACKAGES :=./test/e2e/...
+test-e2e: test-unit
 
 update-codegen-crds:
 	go run ./vendor/github.com/openshift/library-go/cmd/crd-schema-gen/main.go --domain openshift.io --apis-dir vendor/github.com/openshift/api
