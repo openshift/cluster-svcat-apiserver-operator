@@ -87,7 +87,7 @@ func syncServiceCatalogAPIServer_v311_00_to_latest(c ServiceCatalogAPIServerOper
 	// something else, we don't stomp their apiservices until ours have a reasonable chance at working.
 	var actualAPIServices []*apiregistrationv1.APIService
 	if actualDaemonSet != nil && actualDaemonSet.Status.NumberAvailable > 0 {
-		actualAPIServices, err = manageAPIServices_v311_00_to_latest(c.apiregistrationv1Client)
+		actualAPIServices, err = manageAPIServices_v311_00_to_latest(c.apiregistrationv1Client, c.eventRecorder)
 		if err != nil {
 			errors = append(errors, fmt.Errorf("%q: %v", "apiservices", err))
 		}
@@ -278,7 +278,7 @@ func manageServiceCatalogAPIServerDaemonSet_v311_00_to_latest(client appsclientv
 	return resourceapply.ApplyDaemonSet(client, recorder, required, resourcemerge.ExpectedDaemonSetGeneration(required, generationStatus), forceRollingUpdate)
 }
 
-func manageAPIServices_v311_00_to_latest(client apiregistrationv1client.APIServicesGetter) ([]*apiregistrationv1.APIService, error) {
+func manageAPIServices_v311_00_to_latest(client apiregistrationv1client.APIServicesGetter, recorder events.Recorder) ([]*apiregistrationv1.APIService, error) {
 	var apiServices []*apiregistrationv1.APIService
 	for _, apiServiceGroupVersion := range apiServiceGroupVersions {
 		obj := &apiregistrationv1.APIService{
@@ -300,7 +300,7 @@ func manageAPIServices_v311_00_to_latest(client apiregistrationv1client.APIServi
 			},
 		}
 
-		apiService, _, err := resourceapply.ApplyAPIService(client, obj)
+		apiService, _, err := resourceapply.ApplyAPIService(client, recorder, obj)
 		if err != nil {
 			return nil, err
 		}
