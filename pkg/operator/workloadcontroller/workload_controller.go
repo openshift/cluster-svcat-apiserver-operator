@@ -156,6 +156,21 @@ func (c ServiceCatalogAPIServerOperator) sync() error {
 			return err
 		}
 
+		err := wait.Poll(1*time.Second, 2*time.Minute, func() (stop bool, err error) {
+			_, err = c.kubeClient.CoreV1().Namespaces().Get(operatorclient.TargetNamespaceName, metav1.GetOptions{})
+			if apierrors.IsNotFound(err) {
+				// good, namespace is gone
+				return true, nil
+			} else if err != nil {
+				return false, err
+			}
+			return false, nil
+		})
+		if err != nil {
+			klog.Errorf("Could not verify namespace was removed, can not delete API service yet")
+			return err
+		}
+
 		// delete the apiserver once we're done
 		apiname := fmt.Sprintf("%s.%s", apiServiceGroupVersions[0].Version, apiServiceGroupVersions[0].Group)
 		if err := c.apiregistrationv1Client.APIServices().Delete(apiname, nil); err != nil && !apierrors.IsNotFound(err) {
