@@ -324,9 +324,6 @@ func (c ServiceCatalogAPIServerOperator) deleteOwnerRefFromServiceBindings() err
 		if apierrors.IsNotFound(err) {
 			klog.Info("No service bindings found, nothing to delete.")
 			return nil
-		} else if apierrors.IsServiceUnavailable(err) {
-			klog.Info("service catalog apiserver has shutdown, nothing to delete.")
-			return nil
 		}
 		klog.Errorf("Problem getting the bindings list. %v", err)
 		return err
