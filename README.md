@@ -48,8 +48,8 @@ this is a big hammer, you could instead just tell the CVO your operator should b
 Build and push your newly built image to a repo:
 ```
 $ make images
-$ docker tag registry.svc.ci.openshift.org/ocp/4.2:cluster-svcat-apiserver-operator docker.io/jmrodri/ocp-cluster-svcat-apiserver-operator:latest
-$ docker push docker.io/jmrodri/ocp-cluster-svcat-apiserver-operator:latest
+$ docker tag registry.svc.ci.openshift.org/ocp/4.2:cluster-svcat-apiserver-operator docker.io/ACCOUNT/ocp-cluster-svcat-apiserver-operator:latest
+$ docker push docker.io/ACCOUNT/ocp-cluster-svcat-apiserver-operator:latest
 ```
 and then update the manifest to specify your operator  image:
 ```
@@ -62,7 +62,7 @@ locate the image and change the image and pull policy:
 ```
 to
 ```
-        image: docker.io/jmrodri/ocp-cluster-svcat-apiserver-operator:latest
+        image: docker.io/ACCOUNT/ocp-cluster-svcat-apiserver-operator:latest
         imagePullPolicy: Always
 ```
 This will cause your dev operator image to be pulled down and deployed.  When you want to deploy a newly built image just scale your operator to zero and right back to one:
@@ -81,7 +81,7 @@ and change the value to your own repo, something like
 ```
         env:
         - name: IMAGE
-          value: docker.io/jmrodri/service-catalog:latest
+          value: docker.io/ACCOUNT/service-catalog:latest
 ```
 
 When testing changes to the operator, remember to validate with a simulated fresh cluster install.  This should include:
