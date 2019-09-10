@@ -155,7 +155,7 @@ func (c ServiceCatalogAPIServerOperator) sync() error {
 			return err
 		}
 
-		err := wait.Poll(1*time.Second, 2*time.Minute, func() (stop bool, err error) {
+		err := wait.PollImmediate(1*time.Second, 2*time.Minute, func() (stop bool, err error) {
 			_, err = c.kubeClient.CoreV1().Namespaces().Get(operatorclient.TargetNamespaceName, metav1.GetOptions{})
 			if apierrors.IsNotFound(err) {
 				// good, namespace is gone
