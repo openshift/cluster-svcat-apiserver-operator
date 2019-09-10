@@ -1,7 +1,6 @@
 all: build
 .PHONY: all
 
-#GO_PACKAGE := cluster-svcat-apiserver-operator
 # Include the library makefile
 include $(addprefix ./vendor/github.com/openshift/library-go/alpha-build-machinery/make/, \
 	golang.mk \
@@ -12,10 +11,10 @@ include $(addprefix ./vendor/github.com/openshift/library-go/alpha-build-machine
 
 # This will call a macro called "build-image" which will generate image specific targets based on the parameters:
 # $0 - macro name
-# $1 - target suffix
-# $2 - Dockerfile path
-# $3 - context directory for image build
-# It will generate target "image-$(1)" for builing the image an binding it as a prerequisite to target "images".
+# $1 - target name
+# $2 - image ref
+# $3 - Dockerfile path
+# $4 - context directory for image build
 $(call build-image,ocp-cluster-svcat-apiserver-operator,registry.svc.ci.openshift.org/ocp/4.2:cluster-svcat-apiserver-operator,./Dockerfile,.)
 
 # This will call a macro called "add-bindata" which will generate bindata specific targets based on the parameters:
