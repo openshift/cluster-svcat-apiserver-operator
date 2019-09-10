@@ -151,7 +151,6 @@ func (c ServiceCatalogAPIServerOperator) sync() error {
 			return err
 		}
 
-		// TODO probably need to watch until the NS is really gone
 		if err := c.kubeClient.CoreV1().Namespaces().Delete(operatorclient.TargetNamespaceName, nil); err != nil && !apierrors.IsNotFound(err) {
 			return err
 		}
