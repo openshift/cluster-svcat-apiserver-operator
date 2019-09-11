@@ -20,6 +20,7 @@ import (
 	"github.com/openshift/library-go/pkg/operator/v1helpers"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	apiregistrationclient "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	apiregistrationinformers "k8s.io/kube-aggregator/pkg/client/informers/externalversions"
@@ -39,6 +40,10 @@ func RunOperator(ctx *controllercmd.ControllerContext) error {
 		return err
 	}
 	configClient, err := configv1client.NewForConfig(ctx.KubeConfig)
+	if err != nil {
+		return err
+	}
+	dynamicClient, err := dynamic.NewForConfig(ctx.KubeConfig)
 	if err != nil {
 		return err
 	}
@@ -97,6 +102,7 @@ func RunOperator(ctx *controllercmd.ControllerContext) error {
 		kubeClient,
 		apiregistrationv1Client.ApiregistrationV1(),
 		ctx.EventRecorder,
+		dynamicClient,
 	)
 	finalizerController := NewFinalizerController(
 		kubeInformersForNamespaces.InformersFor(operatorclient.TargetNamespaceName),
