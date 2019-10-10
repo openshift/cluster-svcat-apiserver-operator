@@ -5,3 +5,5 @@ metadata:
   name: openshift-service-catalog-apiserver-operator
   annotations:
     openshift.io/node-selector: ""
+  labels:
+    openshift.io/cluster-monitoring: "true"
