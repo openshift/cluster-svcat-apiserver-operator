@@ -9,8 +9,7 @@ import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 // Network holds cluster-wide information about Network. The canonical name is `cluster`. It is used to configure the desired network configuration, such as: IP address pools for services/pod IPs, network plugin, etc.
 // Please view network.spec for an explanation on what applies when configuring this resource.
 type Network struct {
-	metav1.TypeMeta `json:",inline"`
-	// Standard object's metadata.
+	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// spec holds user settable values for configuration.
@@ -48,7 +47,8 @@ type NetworkSpec struct {
 	NetworkType string `json:"networkType"`
 
 	// externalIP defines configuration for controllers that
-	// affect Service.ExternalIP
+	// affect Service.ExternalIP. If nil, then ExternalIP is
+	// not allowed to be set.
 	// +optional
 	ExternalIP *ExternalIPConfig `json:"externalIP,omitempty"`
 }
@@ -76,6 +76,7 @@ type ClusterNetworkEntry struct {
 	CIDR string `json:"cidr"`
 
 	// The size (prefix) of block to allocate to each node.
+	// +kubebuilder:validation:Minimum=0
 	HostPrefix uint32 `json:"hostPrefix"`
 }
 
@@ -83,8 +84,7 @@ type ClusterNetworkEntry struct {
 // of a Service resource.
 type ExternalIPConfig struct {
 	// policy is a set of restrictions applied to the ExternalIP field.
-	// If nil, any value is allowed for an ExternalIP. If the empty/zero
-	// policy is supplied, then ExternalIP is not allowed to be set.
+	// If nil or empty, then ExternalIP is not allowed to be set.
 	// +optional
 	Policy *ExternalIPPolicy `json:"policy,omitempty"`
 
@@ -116,7 +116,7 @@ type ExternalIPPolicy struct {
 
 type NetworkList struct {
 	metav1.TypeMeta `json:",inline"`
-	// Standard object's metadata.
 	metav1.ListMeta `json:"metadata"`
-	Items           []Network `json:"items"`
+
+	Items []Network `json:"items"`
 }

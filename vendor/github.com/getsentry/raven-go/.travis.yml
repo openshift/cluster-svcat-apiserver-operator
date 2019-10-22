@@ -20,7 +20,7 @@ script:
   - $GOPATH/bin/go2xunit -fail -input gotest.out -output xunit.xml
   - go test -v -coverprofile=coverage.txt -covermode count .
   - $GOPATH/bin/gocover-cobertura < coverage.txt > coverage.xml
-
+    
 after_script:
   - npm install -g @zeus-ci/cli
   - zeus upload -t "application/x-cobertura+xml" coverage.xml

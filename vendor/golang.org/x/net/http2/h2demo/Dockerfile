@@ -160,3 +160,4 @@ RUN go install -tags "h2demo netgo" golang.org/x/net/http2/h2demo
 
 FROM golang:1.11
 COPY --from=build /go/bin/h2demo /h2demo
+

@@ -27,7 +27,7 @@ import (
 var associativeListParser = func() typed.ParseableType {
 	parser, err := typed.NewParser(`types:
 - name: type
-  struct:
+  map:
     fields:
       - name: list
         type:
@@ -40,7 +40,7 @@ var associativeListParser = func() typed.ParseableType {
     keys:
     - name
 - name: myElement
-  struct:
+  map:
     fields:
     - name: name
       type:
@@ -84,14 +84,15 @@ func TestUpdateAssociativeLists(t *testing.T) {
 				  value: 2
 			`,
 			Managed: fieldpath.ManagedFields{
-				"default": &fieldpath.VersionedSet{
-					Set: _NS(
+				"default": fieldpath.NewVersionedSet(
+					_NS(
 						_P("list", _KBF("name", _SV("b"))),
 						_P("list", _KBF("name", _SV("b")), "name"),
 						_P("list", _KBF("name", _SV("b")), "value"),
 					),
-					APIVersion: "v1",
-				},
+					"v1",
+					false,
+				),
 			},
 		},
 	}

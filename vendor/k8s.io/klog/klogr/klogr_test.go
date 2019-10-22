@@ -62,7 +62,7 @@ func TestInfo(t *testing.T) {
 		"should print different log level if set": {
 			klogr: New().V(4),
 			text:  "test",
-			expectedOutput: ` "level"=4 "msg"="test"
+			expectedOutput: ` "level"=4 "msg"="test"  
 `,
 		},
 		"should correctly handle odd-numbers of KVs": {
