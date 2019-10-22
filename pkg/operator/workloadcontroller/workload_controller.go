@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/openshift/cluster-svcat-apiserver-operator/pkg/metrics"
 	"github.com/openshift/cluster-svcat-apiserver-operator/pkg/operator/operatorclient"
 
 	"k8s.io/klog"
@@ -144,6 +145,7 @@ func (c ServiceCatalogAPIServerOperator) sync() error {
 				return err
 			}
 		}
+		metrics.APIServerDisabled()
 		return nil
 	case operatorsv1.Removed:
 		// delete the owner references from the service bindings
@@ -203,12 +205,14 @@ func (c ServiceCatalogAPIServerOperator) sync() error {
 				return err
 			}
 		}
+		metrics.APIServerDisabled()
 		return nil
 	default:
 		c.eventRecorder.Warningf("ManagementStateUnknown", "Unrecognized operator management state %q", operatorConfig.Spec.ManagementState)
 		return nil
 	}
 
+	metrics.APIServerEnabled()
 	forceRequeue, err := syncServiceCatalogAPIServer_v311_00_to_latest(c, operatorConfig)
 	if forceRequeue && err != nil {
 		c.queue.AddRateLimited(workQueueKey)

@@ -1,8 +1,7 @@
 package version
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
-
+	"github.com/openshift/cluster-svcat-apiserver-operator/pkg/metrics"
 	"k8s.io/apimachinery/pkg/version"
 )
 
@@ -34,14 +33,5 @@ func Get() version.Info {
 }
 
 func init() {
-	buildInfo := prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "openshift_cluster_openshift_apiserver_operator_build_info",
-			Help: "A metric with a constant '1' value labeled by major, minor, git commit & git version from which OpenShift API Server was built.",
-		},
-		[]string{"major", "minor", "gitCommit", "gitVersion"},
-	)
-	buildInfo.WithLabelValues(majorFromGit, minorFromGit, commitFromGit, versionFromGit).Set(1)
-
-	prometheus.MustRegister(buildInfo)
+	metrics.RegisterVersion(majorFromGit, minorFromGit, commitFromGit, versionFromGit)
 }
