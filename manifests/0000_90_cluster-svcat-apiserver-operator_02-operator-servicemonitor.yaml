@@ -40,7 +40,6 @@ spec:
             summary: Indicates whether Service Catalog is enabled
           expr: |
             service_catalog_apiserver_enabled > 0
-          for: 12h
           labels:
             severity: warning
 
