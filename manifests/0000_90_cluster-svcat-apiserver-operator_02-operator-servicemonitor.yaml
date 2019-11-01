@@ -25,3 +25,21 @@ spec:
   selector:
     matchLabels:
       app: openshift-service-catalog-apiserver-operator
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: openshift-service-catalog-apiserver-operator
+  namespace: openshift-service-catalog-apiserver-operator
+spec:
+  groups:
+    - name: svcat-apiserver-enabled
+      rules:
+        - alert: ServiceCatalogAPIServerEnabled
+          annotations:
+            summary: Indicates whether Service Catalog API Server is enabled
+          expr: |
+            service_catalog_apiserver_enabled > 0
+          labels:
+            severity: warning
+
