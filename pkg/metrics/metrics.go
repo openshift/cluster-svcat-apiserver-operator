@@ -8,7 +8,7 @@ import (
 var (
 	buildInfo = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "openshift_cluster_openshift_apiserver_operator_build_info",
+			Name: "openshift_cluster_svcat_apiserver_operator_build_info",
 			Help: "A metric with a constant '1' value labeled by major, minor, git commit & git version from which OpenShift API Server was built.",
 		},
 		[]string{"major", "minor", "gitCommit", "gitVersion"},
@@ -44,11 +44,11 @@ func RegisterVersion(major, minor, gitCommit, gitVersion string) {
 // APIServerEnabled - Indicates Service Catalog APIServer has been enabled
 func APIServerEnabled() {
 	defer recoverMetricPanic()
-	apiserverEnabled.Inc()
+	apiserverEnabled.Set(1.0)
 }
 
 // APIServerDisabled - Indicates Service Catalog APIServer has been disabled
 func APIServerDisabled() {
 	defer recoverMetricPanic()
-	apiserverEnabled.Dec()
+	apiserverEnabled.Set(0.0)
 }
