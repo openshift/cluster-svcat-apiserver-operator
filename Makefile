@@ -15,7 +15,7 @@ include $(addprefix ./vendor/github.com/openshift/library-go/alpha-build-machine
 # $2 - image ref
 # $3 - Dockerfile path
 # $4 - context directory for image build
-$(call build-image,ocp-cluster-svcat-apiserver-operator,registry.svc.ci.openshift.org/ocp/4.2:cluster-svcat-apiserver-operator,./Dockerfile,.)
+$(call build-image,ocp-cluster-svcat-apiserver-operator,registry.svc.ci.openshift.org/ocp/4.3:cluster-svcat-apiserver-operator,./Dockerfile,.)
 
 # This will call a macro called "add-bindata" which will generate bindata specific targets based on the parameters:
 # $0 - macro name
