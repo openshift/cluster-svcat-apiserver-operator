@@ -1,6 +1,7 @@
 package version
 
 import (
+	"fmt"
 	"github.com/openshift/cluster-svcat-apiserver-operator/pkg/metrics"
 	"k8s.io/apimachinery/pkg/version"
 )
@@ -34,4 +35,9 @@ func Get() version.Info {
 
 func init() {
 	metrics.RegisterVersion(majorFromGit, minorFromGit, commitFromGit, versionFromGit)
+}
+
+// Commit returns a pretty string concatenation of GitCommit
+func Commit() string {
+	return fmt.Sprintf("cluster-svcat-apiserver-operator source git commit: %s\n", commitFromGit)
 }
