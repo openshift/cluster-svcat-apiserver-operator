@@ -71,6 +71,7 @@ func TestPruneController(t *testing.T) {
 				"delete:secrets:openshift-config-managed",
 				"update:secrets:openshift-config-managed",
 				"delete:secrets:openshift-config-managed",
+				"create:events:kms",
 			},
 			validateFunc: func(ts *testing.T, actions []clientgotesting.Action, initialSecrets []*corev1.Secret) {
 				validateSecretsWerePruned(ts, actions, initialSecrets[:3])
@@ -115,7 +116,7 @@ func TestPruneController(t *testing.T) {
 						},
 					},
 					NodeStatuses: []operatorv1.NodeStatus{
-						{NodeName: "kube-apiserver-1"},
+						{NodeName: "node-1"},
 					},
 				},
 				nil,
@@ -127,7 +128,7 @@ func TestPruneController(t *testing.T) {
 				rawSecrets = append(rawSecrets, initialSecret)
 			}
 
-			fakePod := encryptiontesting.CreateDummyKubeAPIPod("kube-apiserver-1", "kms")
+			fakePod := encryptiontesting.CreateDummyKubeAPIPod("kube-apiserver-1", "kms", "node-1")
 
 			writeKeyRaw := []byte("71ea7c91419a68fd1224f88d50316b4e") // NzFlYTdjOTE0MTlhNjhmZDEyMjRmODhkNTAzMTZiNGU=
 			writeKeyID := uint64(len(scenario.initialSecrets) + 1)
@@ -170,7 +171,7 @@ func TestPruneController(t *testing.T) {
 			kubeInformers := v1helpers.NewKubeInformersForNamespaces(fakeKubeClient, "openshift-config-managed", scenario.targetNamespace)
 			fakeSecretClient := fakeKubeClient.CoreV1()
 
-			deployer, err := encryptiondeployer.NewStaticPodDeployer(scenario.targetNamespace, kubeInformers, nil, fakeKubeClient.CoreV1(), fakeSecretClient, fakeOperatorClient)
+			deployer, err := encryptiondeployer.NewRevisionLabelPodDeployer("revision", scenario.targetNamespace, kubeInformers, nil, fakeKubeClient.CoreV1(), fakeSecretClient, encryptiondeployer.StaticPodNodeProvider{OperatorClient: fakeOperatorClient})
 			if err != nil {
 				t.Fatal(err)
 			}
