@@ -39,7 +39,7 @@ func CreateEncryptionKeySecretNoDataWithMode(targetNS string, grs []schema.Group
 				state.KubernetesDescriptionKey: state.KubernetesDescriptionScaryValue,
 
 				"encryption.apiserver.operator.openshift.io/mode":            mode,
-				"encryption.apiserver.operator.openshift.io/internal-reason": "no-secrets",
+				"encryption.apiserver.operator.openshift.io/internal-reason": "",
 				"encryption.apiserver.operator.openshift.io/external-reason": "",
 			},
 			Labels: map[string]string{
@@ -89,7 +89,7 @@ func CreateExpiredMigratedEncryptionKeySecretWithRawKey(targetNS string, grs []s
 	return CreateMigratedEncryptionKeySecretWithRawKey(targetNS, grs, keyID, rawKey, time.Now().Add(-(time.Hour*24*7 + time.Hour)))
 }
 
-func CreateDummyKubeAPIPod(name, namespace string) *corev1.Pod {
+func CreateDummyKubeAPIPod(name, namespace string, nodeName string) *corev1.Pod {
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -98,6 +98,9 @@ func CreateDummyKubeAPIPod(name, namespace string) *corev1.Pod {
 				"apiserver": "true",
 				"revision":  "1",
 			},
+		},
+		Spec: corev1.PodSpec{
+			NodeName: nodeName,
 		},
 		Status: corev1.PodStatus{
 			Phase: corev1.PodRunning,
@@ -111,15 +114,15 @@ func CreateDummyKubeAPIPod(name, namespace string) *corev1.Pod {
 	}
 }
 
-func CreateDummyKubeAPIPodInUnknownPhase(name, namespace string) *corev1.Pod {
-	p := CreateDummyKubeAPIPod(name, namespace)
+func CreateDummyKubeAPIPodInUnknownPhase(name, namespace string, nodeName string) *corev1.Pod {
+	p := CreateDummyKubeAPIPod(name, namespace, nodeName)
 	p.Status.Phase = corev1.PodUnknown
 	return p
 }
 
 func ValidateActionsVerbs(actualActions []clientgotesting.Action, expectedActions []string) error {
 	if len(actualActions) != len(expectedActions) {
-		return fmt.Errorf("expected to get %d actions but got %d, expected=%v, got=%v", len(expectedActions), len(actualActions), expectedActions, actionStrings(actualActions))
+		return fmt.Errorf("expected to get %d actions but got %d\nexpected=%v \n got=%v", len(expectedActions), len(actualActions), expectedActions, actionStrings(actualActions))
 	}
 	for i, a := range actualActions {
 		if got, expected := actionString(a), expectedActions[i]; got != expected {
