@@ -228,7 +228,6 @@ func syncServiceCatalogAPIServer_v311_00_to_latest(c ServiceCatalogAPIServerOper
 
 func manageServiceCatalogAPIServerConfigMap_v311_00_to_latest(kubeClient kubernetes.Interface, client coreclientv1.ConfigMapsGetter, recorder events.Recorder, operatorConfig *operatorv1.ServiceCatalogAPIServer) (*corev1.ConfigMap, bool, error) {
 	configMap := resourceread.ReadConfigMapV1OrDie(v311_00_assets.MustAsset("v3.11.0/openshift-svcat-apiserver/cm.yaml"))
-
 	// we can embed input hashes on our main configmap to drive rollouts when they change.
 	inputHashes, err := resourcehash.MultipleObjectHashStringMapForObjectReferences(
 		kubeClient,
@@ -299,6 +298,7 @@ func manageAPIServices_v311_00_to_latest(client apiregistrationv1client.APIServi
 				VersionPriority:      15,
 			},
 		}
+		apiregistrationv1.SetDefaults_ServiceReference(obj.Spec.Service)
 
 		apiService, _, err := resourceapply.ApplyAPIService(client, recorder, obj)
 		if err != nil {
