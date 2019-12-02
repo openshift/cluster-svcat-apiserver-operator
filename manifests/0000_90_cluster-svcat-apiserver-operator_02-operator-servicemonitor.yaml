@@ -37,6 +37,7 @@ spec:
       rules:
         - alert: ServiceCatalogAPIServerEnabled
           annotations:
+            message: Indicates whether Service Catalog API Server is enabled
             summary: Indicates whether Service Catalog API Server is enabled
           expr: |
             service_catalog_apiserver_enabled > 0
