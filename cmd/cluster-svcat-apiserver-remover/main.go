@@ -1,8 +1,11 @@
 package main
 
 import (
+	"os"
+
 	operatorapiv1 "github.com/openshift/api/operator/v1"
 	operatorclient "github.com/openshift/client-go/operator/clientset/versioned"
+	operatorv1 "github.com/openshift/client-go/operator/clientset/versioned/typed/operator/v1"
 	log "github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,6 +28,23 @@ func createClientConfigFromFile(configPath string) (*rest.Config, error) {
 		return nil, err
 	}
 	return config, nil
+}
+
+func deleteTargetNamespace(kubeClient *kubernetes.Clientset, target string) {
+	log.Infof("Removing target namespace %s", target)
+	if err := kubeClient.CoreV1().Namespaces().Delete(target, nil); err != nil && !apierrors.IsNotFound(err) {
+		log.Errorf("problem removing target namespace [%s] :  %v", target, err)
+	}
+}
+
+func deleteCustomResource(client operatorv1.OperatorV1Interface) {
+	log.Info("Removing the ServiceCatalogAPIServer CR")
+	err := client.ServiceCatalogAPIServers().Delete("cluster", &metav1.DeleteOptions{})
+	if err != nil {
+		log.Errorf("ServiceCatalogAPIServer cr deletion failed: %v", err)
+	} else {
+		log.Info("ServiceCatalogAPIServer cr removed successfully.")
+	}
 }
 
 func main() {
@@ -50,39 +70,26 @@ func main() {
 	}
 	operatorConfigClient := operatorClient.OperatorV1()
 	operatorConfig, err := operatorConfigClient.ServiceCatalogAPIServers().Get("cluster", metav1.GetOptions{})
-	if err != nil {
+	if apierrors.IsNotFound(err) {
+		log.Info("ServiceCatalogAPIServer cr has already been removed.")
+		deleteTargetNamespace(kubeClient, targetNamespaceName)
+		os.Exit(0)
+	} else if err != nil {
 		log.Errorf("problem getting ServiceCatalogAPIServer CR, error %v", err)
 	}
 
+	// Handle the various ManagementStates
 	switch operatorConfig.Spec.ManagementState {
 	case operatorapiv1.Managed:
 		log.Warning("We found a cluster-svcat-apiserver-operator in Managed state. Aborting")
 	case operatorapiv1.Unmanaged:
 		log.Info("ServiceCatalogAPIServer managementState is 'Unmanaged'")
-		log.Infof("Removing target namespace %s", targetNamespaceName)
-		if err := kubeClient.CoreV1().Namespaces().Delete(targetNamespaceName, nil); err != nil && !apierrors.IsNotFound(err) {
-			log.Errorf("problem removing target namespace [%s] :  %v", targetNamespaceName, err)
-		}
-		log.Info("Removing the ServiceCatalogAPIServer CR")
-		err = operatorConfigClient.ServiceCatalogAPIServers().Delete("cluster", &metav1.DeleteOptions{})
-		if err != nil {
-			log.Errorf("ServiceCatalogAPIServer cr deletion failed: %v", err)
-		} else {
-			log.Info("ServiceCatalogAPIServer cr removed successfully.")
-		}
+		deleteTargetNamespace(kubeClient, targetNamespaceName)
+		deleteCustomResource(operatorConfigClient)
 	case operatorapiv1.Removed:
 		log.Info("ServiceCatalogAPIServer managementState is 'Removed'")
-		log.Infof("Removing target namespace %s", targetNamespaceName)
-		if err := kubeClient.CoreV1().Namespaces().Delete(targetNamespaceName, nil); err != nil && !apierrors.IsNotFound(err) {
-			log.Errorf("problem removing target namespace [%s] :  %v", targetNamespaceName, err)
-		}
-		log.Info("Removing the ServiceCatalogAPIServer CR")
-		err = operatorConfigClient.ServiceCatalogAPIServers().Delete("cluster", &metav1.DeleteOptions{})
-		if err != nil {
-			log.Errorf("ServiceCatalogAPIServer cr deletion failed: %v", err)
-		} else {
-			log.Info("ServiceCatalogAPIServer cr removed successfully.")
-		}
+		deleteTargetNamespace(kubeClient, targetNamespaceName)
+		deleteCustomResource(operatorConfigClient)
 	default:
 		log.Error("Unknown managementState")
 	}
