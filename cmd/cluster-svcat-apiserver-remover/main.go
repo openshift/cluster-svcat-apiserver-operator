@@ -57,7 +57,6 @@ func main() {
 	switch operatorConfig.Spec.ManagementState {
 	case operatorapiv1.Managed:
 		log.Warning("We found a cluster-svcat-apiserver-operator in Managed state. Aborting")
-		break
 	case operatorapiv1.Unmanaged:
 		log.Info("ServiceCatalogAPIServer managementState is 'Unmanaged'")
 		log.Infof("Removing target namespace %s", targetNamespaceName)
@@ -71,7 +70,6 @@ func main() {
 		} else {
 			log.Info("ServiceCatalogAPIServer cr removed successfully.")
 		}
-		break
 	case operatorapiv1.Removed:
 		log.Info("ServiceCatalogAPIServer managementState is 'Removed'")
 		log.Infof("Removing target namespace %s", targetNamespaceName)
@@ -85,7 +83,6 @@ func main() {
 		} else {
 			log.Info("ServiceCatalogAPIServer cr removed successfully.")
 		}
-		break
 	default:
 		log.Error("Unknown managementState")
 	}
