@@ -1,0 +1,15 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: openshift-service-catalog-apiserver-remover
+  namespace: openshift-service-catalog-apiserver-remover
+spec:
+  template:
+    spec:
+      containers:
+      - name: pi
+        # image will be some registry image
+        image: registry.svc.ci.openshift.org/openshift/origin-v4.0:cluster-svcat-apiserver-operator
+        command: ["/usr/bin/cluster-svcat-apiserver-remover"]
+      restartPolicy: Never
+  backoffLimit: 4
