@@ -6,7 +6,3 @@ spec:
     from:
       kind: DockerImage
       name: registry.svc.ci.openshift.org/openshift/origin-v4.0:cluster-svcat-apiserver-operator
-  - name: service-catalog
-    from:
-      kind: DockerImage
-      name: registry.svc.ci.openshift.org/openshift/origin-v4.0:service-catalog
