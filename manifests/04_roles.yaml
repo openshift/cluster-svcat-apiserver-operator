@@ -7,5 +7,5 @@ roleRef:
   name: cluster-admin
 subjects:
 - kind: ServiceAccount
-  namespace: openshift-service-catalog-apiserver-remover
+  namespace: openshift-service-catalog-removed
   name: openshift-service-catalog-apiserver-remover

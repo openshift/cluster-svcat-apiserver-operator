@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: openshift-service-catalog-apiserver-remover
-  namespace: openshift-service-catalog-apiserver-remover
+  namespace: openshift-service-catalog-removed
 spec:
   template:
     spec:
