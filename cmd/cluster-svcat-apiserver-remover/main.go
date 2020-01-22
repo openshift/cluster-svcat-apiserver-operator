@@ -4,6 +4,7 @@ import (
 	"os"
 
 	operatorapiv1 "github.com/openshift/api/operator/v1"
+	configclient "github.com/openshift/client-go/config/clientset/versioned"
 	operatorclient "github.com/openshift/client-go/operator/clientset/versioned"
 	operatorv1 "github.com/openshift/client-go/operator/clientset/versioned/typed/operator/v1"
 	log "github.com/sirupsen/logrus"
@@ -47,6 +48,19 @@ func deleteCustomResource(client operatorv1.OperatorV1Interface) {
 	}
 }
 
+func deleteClusterOperator(clientConfig *rest.Config) {
+	configClient, err := configclient.NewForConfig(clientConfig)
+	if err != nil {
+		log.Errorf("problem getting config client, error %v", err)
+	}
+
+	log.Info("Removing the service-catalog-apiserver clusteroperator")
+	err = configClient.ConfigV1().ClusterOperators().Delete("service-catalog-apiserver", &metav1.DeleteOptions{})
+	if err != nil && !apierrors.IsNotFound(err) {
+		log.Errorf("problem removing cluster operator [service-catalog-apiserver] :  %v", err)
+	}
+}
+
 func main() {
 	log.Info("Starting openshift-service-catalog-apiserver-remover job")
 
@@ -73,6 +87,7 @@ func main() {
 	if apierrors.IsNotFound(err) {
 		log.Info("ServiceCatalogAPIServer cr has already been removed.")
 		deleteTargetNamespace(kubeClient, targetNamespaceName)
+		deleteClusterOperator(clientConfig)
 		os.Exit(0)
 	} else if err != nil {
 		log.Errorf("problem getting ServiceCatalogAPIServer CR, error %v", err)
@@ -86,10 +101,12 @@ func main() {
 		log.Info("ServiceCatalogAPIServer managementState is 'Unmanaged'")
 		deleteTargetNamespace(kubeClient, targetNamespaceName)
 		deleteCustomResource(operatorConfigClient)
+		deleteClusterOperator(clientConfig)
 	case operatorapiv1.Removed:
 		log.Info("ServiceCatalogAPIServer managementState is 'Removed'")
 		deleteTargetNamespace(kubeClient, targetNamespaceName)
 		deleteCustomResource(operatorConfigClient)
+		deleteClusterOperator(clientConfig)
 	default:
 		log.Error("Unknown managementState")
 	}
