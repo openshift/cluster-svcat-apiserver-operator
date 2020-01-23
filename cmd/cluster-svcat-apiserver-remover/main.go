@@ -61,6 +61,20 @@ func deleteClusterOperator(clientConfig *rest.Config) {
 	}
 }
 
+func deleteClusterRolesAndBindings(kubeClient *kubernetes.Clientset) {
+	log.Info("Removing ClusterRoleBinding: openshift-service-catalog-apiserver-operator")
+	err := kubeClient.RbacV1().ClusterRoleBindings().Delete("openshift-service-catalog-apiserver-operator", &metav1.DeleteOptions{})
+	if err != nil && !apierrors.IsNotFound(err) {
+		log.Errorf("problem removing cluster role binding [openshift-service-catalog-apiserver-operator] :  %v", err)
+	}
+
+	log.Info("Removing ClusterRole: openshift-service-catalog-apiserver-operator")
+	err = kubeClient.RbacV1().ClusterRoles().Delete("openshift-service-catalog-apiserver-operator", &metav1.DeleteOptions{})
+	if err != nil && !apierrors.IsNotFound(err) {
+		log.Errorf("problem removing cluster role [openshift-service-catalog-apiserver-operator] :  %v", err)
+	}
+}
+
 func main() {
 	log.Info("Starting openshift-service-catalog-apiserver-remover job")
 
@@ -88,6 +102,7 @@ func main() {
 		log.Info("ServiceCatalogAPIServer cr has already been removed.")
 		deleteTargetNamespace(kubeClient, targetNamespaceName)
 		deleteClusterOperator(clientConfig)
+		deleteClusterRolesAndBindings(kubeClient)
 		os.Exit(0)
 	} else if err != nil {
 		log.Errorf("problem getting ServiceCatalogAPIServer CR, error %v", err)
@@ -102,11 +117,13 @@ func main() {
 		deleteTargetNamespace(kubeClient, targetNamespaceName)
 		deleteCustomResource(operatorConfigClient)
 		deleteClusterOperator(clientConfig)
+		deleteClusterRolesAndBindings(kubeClient)
 	case operatorapiv1.Removed:
 		log.Info("ServiceCatalogAPIServer managementState is 'Removed'")
 		deleteTargetNamespace(kubeClient, targetNamespaceName)
 		deleteCustomResource(operatorConfigClient)
 		deleteClusterOperator(clientConfig)
+		deleteClusterRolesAndBindings(kubeClient)
 	default:
 		log.Error("Unknown managementState")
 	}
