@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -20,6 +21,7 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	configv1client "github.com/openshift/client-go/config/clientset/versioned/typed/config/v1"
+
 	"github.com/openshift/library-go/test/library"
 )
 
@@ -141,11 +143,16 @@ func WaitForNextMigratedKey(t testing.TB, kubeClient kubernetes.Interface, prevK
 	nextKeyName, err = determineNextEncryptionKeyName(prevKeyMeta.Name, labelSelector)
 	require.NoError(t, err)
 	if len(prevKeyMeta.Name) == 0 {
-		prevKeyMeta.Name = "no previous key"
+		prevKeyMeta.Name = ""
 		prevKeyMeta.Migrated = defaultTargetGRs
 	}
 
-	t.Logf("Waiting up to %s for the next key %q, previous key was %q", waitPollTimeout.String(), nextKeyName, prevKeyMeta.Name)
+	t.Logf("Waiting up to %s for the next key %q, previous key was %q", waitPollTimeout.String(), nextKeyName, func(prevKeyName string) string {
+		if len(prevKeyName) == 0 {
+			return "no previous key"
+		}
+		return prevKeyName
+	}(prevKeyMeta.Name))
 	observedKeyName := prevKeyMeta.Name
 	if err := wait.Poll(waitPollInterval, waitPollTimeout, func() (bool, error) {
 		currentKeyMeta, err := GetLastKeyMeta(kubeClient, namespace, labelSelector)
@@ -181,7 +188,11 @@ func WaitForNextMigratedKey(t testing.TB, kubeClient kubernetes.Interface, prevK
 
 func GetLastKeyMeta(kubeClient kubernetes.Interface, namespace, labelSelector string) (EncryptionKeyMeta, error) {
 	secretsClient := kubeClient.CoreV1().Secrets(namespace)
-	selectedSecrets, err := secretsClient.List(metav1.ListOptions{LabelSelector: labelSelector})
+	var selectedSecrets *corev1.SecretList
+	err := onErrorWithTimeout(wait.ForeverTestTimeout, retry.DefaultBackoff, transientAPIError, func() (err error) {
+		selectedSecrets, err = secretsClient.List(metav1.ListOptions{LabelSelector: labelSelector})
+		return
+	})
 	if err != nil {
 		return EncryptionKeyMeta{}, err
 	}
@@ -227,7 +238,7 @@ func ForceKeyRotation(t testing.TB, updateUnsupportedConfig UpdateUnsupportedCon
 		return err
 	}
 
-	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+	return onErrorWithTimeout(wait.ForeverTestTimeout, retry.DefaultBackoff, orError(errors.IsConflict, transientAPIError), func() error {
 		return updateUnsupportedConfig(raw)
 	})
 }

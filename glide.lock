@@ -1,5 +1,5 @@
-hash: 361f1ca4e05cd50c8f8021eb8826f73a01dcb2cfc73df6f0a4ee1c1fe84fd41f
-updated: 2019-11-06T11:20:05.351092458-05:00
+hash: 8da9e791e86b5981aff08bdb2838e4f8dd938dd66bca82d9839b6cba35502a87
+updated: 2020-02-24T11:44:56.083840425-05:00
 imports:
 - name: github.com/beorn7/perks
   version: 3a771d992973f24aa725d07868b467d1ddfceafb
@@ -133,7 +133,7 @@ imports:
 - name: github.com/NYTimes/gziphandler
   version: 56545f4a5d46df9a6648819d1664c3a03a13ffdb
 - name: github.com/openshift/api
-  version: 21e87c8db5692e119529c2a80c8997bee050f038
+  version: c99157bc6492218400b18cde7f66510f9ee56a9a
   subpackages:
   - apps
   - apps/v1
@@ -147,6 +147,8 @@ imports:
   - image/docker10
   - image/dockerpre012
   - image/v1
+  - imageregistry
+  - imageregistry/v1
   - kubecontrolplane
   - kubecontrolplane/v1
   - legacyconfig/v1
@@ -168,6 +170,8 @@ imports:
   - quota/v1
   - route
   - route/v1
+  - samples
+  - samples/v1
   - security
   - security/v1
   - servicecertsigner
@@ -176,8 +180,10 @@ imports:
   - template/v1
   - user
   - user/v1
+- name: github.com/openshift/build-machinery-go
+  version: 5e3d6e5701604fe70bd68156d2e5f7dea4acf4b3
 - name: github.com/openshift/client-go
-  version: 2823239d2298214509c3536714f684101799e81b
+  version: 92a2713fa240ea8a375a982d60b43ef5119f85ba
   subpackages:
   - config/clientset/versioned
   - config/clientset/versioned/fake
@@ -204,7 +210,7 @@ imports:
   - operator/listers/operator/v1
   - operator/listers/operator/v1alpha1
 - name: github.com/openshift/library-go
-  version: 97392cdc9bd3a5219fcd909f70d72e308fdcc1b0
+  version: 2e41338733864682b770a7c6dbcfa2b9310b5a4a
   subpackages:
   - pkg/assets
   - pkg/config/client
@@ -213,6 +219,7 @@ imports:
   - pkg/config/leaderelection
   - pkg/config/serving
   - pkg/controller/controllercmd
+  - pkg/controller/factory
   - pkg/controller/fileobserver
   - pkg/controller/metrics
   - pkg/crypto
@@ -221,6 +228,7 @@ imports:
   - pkg/operator/management
   - pkg/operator/resource/resourceapply
   - pkg/operator/resource/resourcehash
+  - pkg/operator/resource/resourcehelper
   - pkg/operator/resource/resourcemerge
   - pkg/operator/resource/resourceread
   - pkg/operator/resourcesynccontroller
@@ -231,7 +239,7 @@ imports:
 - name: github.com/pborman/uuid
   version: 8b1b92947f46224e3b97bb1a3a5b0382be00d31e
 - name: github.com/pkg/profile
-  version: f6fe06335df110bcf1ed6d4e852b760bfc15beee
+  version: 22592cc4bae3572d59be8852c6980023e4c9dec5
 - name: github.com/prometheus/client_golang
   version: 505eaef017263e299324067d40ca2c48f6a2cf50
   subpackages:
@@ -431,7 +439,9 @@ imports:
   - pkg/apis/apiextensions
   - pkg/apis/apiextensions/v1
   - pkg/apis/apiextensions/v1beta1
+  - pkg/client/clientset/clientset
   - pkg/client/clientset/clientset/scheme
+  - pkg/client/clientset/clientset/typed/apiextensions/v1
   - pkg/client/clientset/clientset/typed/apiextensions/v1beta1
 - name: k8s.io/apimachinery
   version: 27d36303b6556f377b4f34e64705fa9024a12b0c
