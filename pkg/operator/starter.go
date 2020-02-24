@@ -1,6 +1,7 @@
 package operator
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"time"
@@ -26,24 +27,24 @@ import (
 	apiregistrationinformers "k8s.io/kube-aggregator/pkg/client/informers/externalversions"
 )
 
-func RunOperator(ctx *controllercmd.ControllerContext) error {
-	kubeClient, err := kubernetes.NewForConfig(ctx.ProtoKubeConfig)
+func RunOperator(ctx context.Context, controllerCtx *controllercmd.ControllerContext) error {
+	kubeClient, err := kubernetes.NewForConfig(controllerCtx.ProtoKubeConfig)
 	if err != nil {
 		return err
 	}
-	apiregistrationv1Client, err := apiregistrationclient.NewForConfig(ctx.ProtoKubeConfig)
+	apiregistrationv1Client, err := apiregistrationclient.NewForConfig(controllerCtx.ProtoKubeConfig)
 	if err != nil {
 		return err
 	}
-	operatorConfigClient, err := operatorv1client.NewForConfig(ctx.KubeConfig)
+	operatorConfigClient, err := operatorv1client.NewForConfig(controllerCtx.KubeConfig)
 	if err != nil {
 		return err
 	}
-	configClient, err := configv1client.NewForConfig(ctx.KubeConfig)
+	configClient, err := configv1client.NewForConfig(controllerCtx.KubeConfig)
 	if err != nil {
 		return err
 	}
-	dynamicClient, err := dynamic.NewForConfig(ctx.KubeConfig)
+	dynamicClient, err := dynamic.NewForConfig(controllerCtx.KubeConfig)
 	if err != nil {
 		return err
 	}
@@ -70,7 +71,7 @@ func RunOperator(ctx *controllercmd.ControllerContext) error {
 		kubeInformersForNamespaces,
 		v1helpers.CachedConfigMapGetter(kubeClient.CoreV1(), kubeInformersForNamespaces),
 		v1helpers.CachedSecretGetter(kubeClient.CoreV1(), kubeInformersForNamespaces),
-		ctx.EventRecorder,
+		controllerCtx.EventRecorder,
 	)
 	if err != nil {
 		return err
@@ -101,13 +102,13 @@ func RunOperator(ctx *controllercmd.ControllerContext) error {
 		configClient.ConfigV1(),
 		kubeClient,
 		apiregistrationv1Client.ApiregistrationV1(),
-		ctx.EventRecorder,
+		controllerCtx.EventRecorder,
 		dynamicClient,
 	)
 	finalizerController := NewFinalizerController(
 		kubeInformersForNamespaces.InformersFor(operatorclient.TargetNamespaceName),
 		kubeClient.CoreV1(),
-		ctx.EventRecorder,
+		controllerCtx.EventRecorder,
 	)
 
 	clusterOperatorStatus := status.NewClusterOperatorStatusController(
@@ -125,10 +126,10 @@ func RunOperator(ctx *controllercmd.ControllerContext) error {
 		configInformers.Config().V1().ClusterOperators(),
 		operatorClient,
 		versionRecorder,
-		ctx.EventRecorder,
+		controllerCtx.EventRecorder,
 	)
 
-	configUpgradeableController := unsupportedconfigoverridescontroller.NewUnsupportedConfigOverridesController(operatorClient, ctx.EventRecorder)
+	configUpgradeableController := unsupportedconfigoverridescontroller.NewUnsupportedConfigOverridesController(operatorClient, controllerCtx.EventRecorder)
 
 	operatorConfigInformers.Start(ctx.Done())
 	kubeInformersForNamespaces.Start(ctx.Done())
@@ -136,10 +137,10 @@ func RunOperator(ctx *controllercmd.ControllerContext) error {
 	configInformers.Start(ctx.Done())
 
 	go workloadController.Run(1, ctx.Done())
-	go clusterOperatorStatus.Run(1, ctx.Done())
+	go clusterOperatorStatus.Run(ctx, 1)
 	go finalizerController.Run(1, ctx.Done())
-	go resourceSyncController.Run(1, ctx.Done())
-	go configUpgradeableController.Run(1, ctx.Done())
+	go resourceSyncController.Run(ctx, 1)
+	go configUpgradeableController.Run(ctx, 1)
 
 	<-ctx.Done()
 	return fmt.Errorf("stopped")
