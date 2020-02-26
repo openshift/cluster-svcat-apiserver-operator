@@ -36,7 +36,9 @@ func syncServiceCatalogAPIServer_v311_00_to_latest(c ServiceCatalogAPIServerOper
 	var err error
 	operatorConfig := originalOperatorConfig.DeepCopy()
 
-	directResourceResults := resourceapply.ApplyDirectly(c.kubeClient, c.eventRecorder, v311_00_assets.Asset,
+	// react to API change
+	clientHolder := resourceapply.NewKubeClientHolder(c.kubeClient)
+	directResourceResults := resourceapply.ApplyDirectly(clientHolder, c.eventRecorder, v311_00_assets.Asset,
 		"v3.11.0/openshift-svcat-apiserver/ns.yaml",
 		"v3.11.0/openshift-svcat-apiserver/svc.yaml",
 		"v3.11.0/openshift-svcat-apiserver/sa.yaml",
