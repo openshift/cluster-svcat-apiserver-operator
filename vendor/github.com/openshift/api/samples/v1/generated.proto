@@ -144,3 +144,4 @@ message ConfigStatus {
   // +patchStrategy=merge
   optional string version = 8;
 }
+
