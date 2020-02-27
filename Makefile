@@ -2,13 +2,13 @@ IMAGE ?= docker.io/openshift/origin-cluster-svcat-apiserver-operator
 TAG ?= latest
 PROG  := cluster-svcat-apiserver-remover
 REPO_PATH:= github.com/openshift/cluster-svcat-apiserver-operator
-GOFLAGS := -ldflags "-X '${REPO_PATH}/pkg/version.SourceGitCommit=$(shell git rev-parse HEAD)'"
+GO_LD_FLAGS := -ldflags "-X '${REPO_PATH}/pkg/version.SourceGitCommit=$(shell git rev-parse HEAD)'"
 SOURCES := $(shell find . -name '*.go' -not -path "*/vendor/*")
 
 all: build build-image verify
 .PHONY: all
 build:
-	GODEBUG=tls13=1 go build ${GOFLAGS} ./cmd/cluster-svcat-apiserver-remover
+	GODEBUG=tls13=1 go build ${GO_LD_FLAGS} ./cmd/cluster-svcat-apiserver-remover
 .PHONY: build
 
 image:
@@ -20,12 +20,12 @@ test: test-unit test-e2e
 
 test-unit:
 ifndef JUNITFILE
-	go test $(GOFLAGS) -race ./...
+	go test $(GO_LD_FLAGS) -race ./...
 else
 ifeq (, $(shell which gotest2junit 2>/dev/null))
 $(error gotest2junit not found! Get it by `go get -u github.com/openshift/release/tools/gotest2junit`.)
 endif
-	go test $(GOFLAGS) -race -json ./... | gotest2junit > $(JUNITFILE)
+	go test $(GO_LD_FLAGS) -race -json ./... | gotest2junit > $(JUNITFILE)
 endif
 .PHONY: test-unit
 
@@ -38,9 +38,9 @@ verify: verify-govet
 .PHONY: verify
 
 verify-govet:
-	go vet $(GOFLAGS) ./...
+	go vet $(GO_LD_FLAGS) ./...
 .PHONY: verify-govet
 
 clean:
-	rm -- "$(PROG)"
+	rm -f $(PROG)
 .PHONY: clean
