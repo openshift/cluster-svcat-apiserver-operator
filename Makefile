@@ -4,6 +4,7 @@ PROG  := cluster-svcat-apiserver-remover
 REPO_PATH:= github.com/openshift/cluster-svcat-apiserver-operator
 GO_LD_FLAGS := -ldflags "-X '${REPO_PATH}/pkg/version.SourceGitCommit=$(shell git rev-parse HEAD)'"
 SOURCES := $(shell find . -name '*.go' -not -path "*/vendor/*")
+GOFLAGS := -mod=vendor
 
 all: build build-image verify
 .PHONY: all
