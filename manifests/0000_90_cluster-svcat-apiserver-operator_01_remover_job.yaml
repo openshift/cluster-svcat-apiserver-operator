@@ -12,5 +12,8 @@ spec:
         # image will be some registry image
         image: registry.svc.ci.openshift.org/openshift/origin-v4.0:cluster-svcat-apiserver-operator
         command: ["/usr/bin/cluster-svcat-apiserver-remover"]
+        resources:
+          requests:
+            memory: 50Mi
       restartPolicy: Never
   backoffLimit: 4
