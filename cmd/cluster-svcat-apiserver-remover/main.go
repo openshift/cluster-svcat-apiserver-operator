@@ -127,4 +127,5 @@ func main() {
 	default:
 		log.Error("Unknown managementState")
 	}
+	log.Info("The openshift-service-catalog-apiserver-remover job, has finished.")
 }
