@@ -1,0 +1,13 @@
+apiVersion: operator.openshift.io/v1
+kind: ServiceCatalogAPIServer
+metadata:
+  name: cluster
+spec:
+  logLevel: "Normal"
+  managementState: Managed
+
+# valid values for logLevel:
+#  Normal - 2
+#  Debug - 4
+#  Trace - 6
+#  TraceAll - 8
