@@ -1,11 +1,11 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: system:openshift:operator:openshift-service-catalog-apiserver-remover
+  name: system:openshift:operator:openshift-service-catalog-apiserver-operator
 roleRef:
   kind: ClusterRole
   name: cluster-admin
 subjects:
 - kind: ServiceAccount
-  namespace: openshift-service-catalog-removed
-  name: openshift-service-catalog-apiserver-remover
+  namespace: openshift-service-catalog-apiserver-operator
+  name: openshift-service-catalog-apiserver-operator
