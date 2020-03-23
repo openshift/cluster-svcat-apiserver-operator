@@ -119,6 +119,12 @@ func (c ServiceCatalogAPIServerOperator) sync() error {
 
 	switch operatorConfig.Spec.ManagementState {
 	case operatorsv1.Managed:
+		v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorsv1.OperatorCondition{
+			Type:    operatorsv1.OperatorStatusTypeUpgradeable,
+			Status:  operatorsv1.ConditionFalse,
+			Reason:  "Managed",
+			Message: "the apiserver is in a managed state, upgrades are not possible.",
+		})
 	case operatorsv1.Unmanaged:
 		originalOperatorConfig := operatorConfig.DeepCopy()
 		v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorsv1.OperatorCondition{
@@ -138,6 +144,12 @@ func (c ServiceCatalogAPIServerOperator) sync() error {
 			Status:  operatorsv1.ConditionFalse,
 			Reason:  "Unmanaged",
 			Message: "the apiserver is in an unmanaged state, therefore no operator actions are degraded.",
+		})
+		v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorsv1.OperatorCondition{
+			Type:    operatorsv1.OperatorStatusTypeUpgradeable,
+			Status:  operatorsv1.ConditionTrue,
+			Reason:  "Unmanaged",
+			Message: "the apiserver is in an unmanaged state, upgrades are possible.",
 		})
 
 		if !equality.Semantic.DeepEqual(operatorConfig.Status, originalOperatorConfig.Status) {
@@ -198,6 +210,12 @@ func (c ServiceCatalogAPIServerOperator) sync() error {
 			Status:  operatorsv1.ConditionFalse,
 			Reason:  "Removed",
 			Message: "",
+		})
+		v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorsv1.OperatorCondition{
+			Type:    operatorsv1.OperatorStatusTypeUpgradeable,
+			Status:  operatorsv1.ConditionTrue,
+			Reason:  "Removed",
+			Message: "the apiserver is in a removed state, upgrades are possible.",
 		})
 
 		if !equality.Semantic.DeepEqual(operatorConfig.Status, originalOperatorConfig.Status) {
