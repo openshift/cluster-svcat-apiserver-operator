@@ -1,0 +1,119 @@
+apiVersion: "apps/v1"
+kind: DaemonSet
+metadata:
+  labels:
+    app: apiserver
+  name: apiserver
+  namespace: openshift-service-catalog-apiserver
+spec:
+  selector:
+    matchLabels:
+      app: apiserver
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: apiserver
+    spec:
+      serviceAccountName: service-catalog-apiserver
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
+      priorityClassName: "system-cluster-critical"
+      containers:
+      - args:
+        - apiserver
+        - --storage-type
+        - etcd
+        - --secure-port
+        - "6443"
+        - --etcd-servers
+        - "https://etcd.openshift-etcd.svc.cluster.local:2379"
+        - --etcd-cafile
+        - "/var/run/configmaps/etcd-serving-ca/ca-bundle.crt"
+        - --etcd-certfile
+        - "/var/run/secrets/etcd-client/tls.crt"
+        - --etcd-keyfile
+        - "/var/run/secrets/etcd-client/tls.key"
+        - --etcd-prefix
+        - "/servicecatalog"
+        - --cors-allowed-origins
+        - "localhost"
+        - --enable-admission-plugins
+        - NamespaceLifecycle,DefaultServicePlan,ServiceBindingsLifecycle,ServicePlanChangeValidator,BrokerAuthSarCheck
+        - --feature-gates
+        - OriginatingIdentity=true
+        - --feature-gates
+        - NamespacedServiceBroker=true
+        image: ${IMAGE}
+        imagePullPolicy: IfNotPresent
+        command: ["/usr/bin/service-catalog"]
+        name: apiserver
+        terminationMessagePolicy: FallbackToLogsOnError
+        ports:
+        - containerPort: 6443
+          protocol: TCP
+        resources:
+          requests:
+            memory: 200Mi
+        terminationMessagePath: /dev/termination-log
+        volumeMounts:
+        - mountPath: /var/run/kubernetes-service-catalog
+          name: apiserver-ssl
+          readOnly: true
+        - mountPath: /etc/origin/master
+          name: etcd-host-cert
+          readOnly: true
+        - mountPath: /var/run/secrets/etcd-client
+          name: etcd-client
+        - mountPath: /var/run/configmaps/etcd-serving-ca
+          name: etcd-serving-ca
+        readinessProbe:
+          httpGet:
+            port: 6443
+            path: /healthz/ready
+            scheme: HTTPS
+          failureThreshold: 3
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 10
+        livenessProbe:
+          httpGet:
+            port: 6443
+            path: /healthz
+            scheme: HTTPS
+          failureThreshold: 3
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 10
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: apiserver-ssl
+        secret:
+          defaultMode: 420
+          secretName: serving-cert
+          items:
+          - key: tls.crt
+            path: apiserver.crt
+          - key: tls.key
+            path: apiserver.key
+      - hostPath:
+          path: /etc/origin/master
+        name: etcd-host-cert
+      - emptyDir: {}
+        name: data-dir
+      - name: etcd-serving-ca
+        configMap:
+          name: etcd-serving-ca
+      - name: etcd-client
+        secret:
+          secretName: etcd-client
+      tolerations:
+      - operator: Exists

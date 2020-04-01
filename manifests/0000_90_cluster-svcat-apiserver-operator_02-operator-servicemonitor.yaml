@@ -1,0 +1,45 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: openshift-service-catalog-apiserver-operator
+  namespace: openshift-service-catalog-apiserver-operator
+spec:
+  endpoints:
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    interval: 30s
+    metricRelabelings:
+    - action: drop
+      regex: etcd_(debugging|disk|request|server).*
+      sourceLabels:
+      - __name__
+    port: https
+    scheme: https
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      serverName: metrics.openshift-service-catalog-apiserver-operator.svc
+  jobLabel: component
+  namespaceSelector:
+    matchNames:
+    - openshift-service-catalog-apiserver-operator
+  selector:
+    matchLabels:
+      app: openshift-service-catalog-apiserver-operator
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: openshift-service-catalog-apiserver-operator
+  namespace: openshift-service-catalog-apiserver-operator
+spec:
+  groups:
+    - name: svcat-apiserver-enabled
+      rules:
+        - alert: ServiceCatalogAPIServerEnabled
+          annotations:
+            message: Indicates whether Service Catalog API Server is enabled
+            summary: Indicates whether Service Catalog API Server is enabled
+          expr: |
+            service_catalog_apiserver_enabled > 0
+          labels:
+            severity: warning
+
