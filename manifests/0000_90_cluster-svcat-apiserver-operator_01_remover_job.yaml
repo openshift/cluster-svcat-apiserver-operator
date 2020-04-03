@@ -3,6 +3,8 @@ kind: Job
 metadata:
   name: openshift-service-catalog-apiserver-remover
   namespace: openshift-service-catalog-removed
+  annotations:
+    release.openshift.io/create-only: "true"
 spec:
   template:
     spec:
