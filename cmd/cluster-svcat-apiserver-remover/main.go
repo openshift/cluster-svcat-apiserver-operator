@@ -39,6 +39,7 @@ func deleteTargetNamespace(kubeClient *kubernetes.Clientset, target string) {
 }
 
 func deleteCustomResource(client operatorv1.OperatorV1Interface) {
+	// ADDING A DUMMY COMMENT
 	log.Info("Removing the ServiceCatalogAPIServer CR")
 	err := client.ServiceCatalogAPIServers().Delete("cluster", &metav1.DeleteOptions{})
 	if err != nil {
