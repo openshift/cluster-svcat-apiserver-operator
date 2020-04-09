@@ -116,6 +116,13 @@ func (c ServiceCatalogAPIServerOperator) sync() error {
 		return err
 	}
 
+	v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorsv1.OperatorCondition{
+		Type:    operatorsv1.OperatorStatusTypeUpgradeable,
+		Status:  operatorsv1.ConditionTrue,
+		Reason:  "",
+		Message: "",
+	})
+
 	switch operatorConfig.Spec.ManagementState {
 	case operatorsv1.Managed:
 	case operatorsv1.Unmanaged:
