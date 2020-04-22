@@ -249,15 +249,31 @@ func manageServiceCatalogAPIServerConfigMap_v311_00_to_latest(kubeClient kuberne
 	return resourceapply.ApplyConfigMap(client, recorder, configMap)
 }
 
-func manageServiceCatalogAPIServerDaemonSet_v311_00_to_latest(client appsclientv1.DaemonSetsGetter, recorder events.Recorder, imagePullSpec string, operatorConfig *operatorv1.ServiceCatalogAPIServer, generationStatus []operatorv1.GenerationStatus, forceRollingUpdate bool) (*appsv1.DaemonSet, bool, error) {
+func manageServiceCatalogAPIServerDaemonSet_v311_00_to_latest(client appsclientv1.DaemonSetsGetter,
+	recorder events.Recorder,
+	imagePullSpec string,
+	operatorConfig *operatorv1.ServiceCatalogAPIServer,
+	generationStatus []operatorv1.GenerationStatus,
+	forceRollingUpdate bool,
+) (*appsv1.DaemonSet, bool, error) {
+
 	required := resourceread.ReadDaemonSetV1OrDie(v311_00_assets.MustAsset("v3.11.0/openshift-svcat-apiserver/ds.yaml"))
 	if len(imagePullSpec) > 0 {
 		required.Spec.Template.Spec.Containers[0].Image = imagePullSpec
 	}
 
-	// we set this so that when the requested image pull spec changes, we always have a diff.  Remember that we don't directly
-	// diff any fields on the daemonset because they can be rewritten by admission and we don't want to constantly be fighting
-	// against admission or defaults.  That was a problem with original versions of apply.
+	// Bug 1821589: use a more dynamic method to get the etcd-servers address
+	// We always want to add this since we removed it from the daemonset yaml
+
+	// TODO: change this to be the value from the config
+	required.Spec.Template.Spec.Containers[0].Args = append(required.Spec.Template.Spec.Containers[0].Args,
+		fmt.Sprintf("--etcd-servers=%s", "https://etcd.openshift-etcd.svc.cluster.local:2379"))
+
+	// we set this so that when the requested image pull spec changes, we always
+	// have a diff.  Remember that we don't directly diff any fields on the
+	// daemonset because they can be rewritten by admission and we don't want
+	// to constantly be fighting against admission or defaults.  That was a
+	// problem with original versions of apply.
 	if required.Annotations == nil {
 		required.Annotations = map[string]string{}
 	}
