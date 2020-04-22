@@ -7,12 +7,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/openshift/library-go/pkg/operator/configobserver"
 	"github.com/openshift/library-go/pkg/operator/events"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-
-	"github.com/openshift/cluster-svcat-apiserver-operator/pkg/operator/configobservation"
+	corelistersv1 "k8s.io/client-go/listers/core/v1"
 )
 
 const (
@@ -21,8 +19,8 @@ const (
 )
 
 // ObserveStorageURLs observes the storage URL config.
-func ObserveStorageURLs(genericListers configobserver.Listers, recorder events.Recorder, currentConfig map[string]interface{}) (map[string]interface{}, []error) {
-	listers := genericListers.(configobservation.Listers)
+//func ObserveStorageURLs(genericListers configobserver.Listers, recorder events.Recorder, currentConfig map[string]interface{}) (map[string]interface{}, []error) {
+func ObserveStorageURLs(lister corelistersv1.EndpointsLister, recorder events.Recorder, currentConfig map[string]interface{}) (map[string]interface{}, []error) {
 	storageConfigURLsPath := []string{"storageConfig", "urls"}
 	var errs []error
 
@@ -40,7 +38,7 @@ func ObserveStorageURLs(genericListers configobserver.Listers, recorder events.R
 	observedConfig := map[string]interface{}{}
 
 	var etcdURLs sort.StringSlice
-	etcdEndpoints, err := listers.EndpointsLister.Endpoints(EtcdEndpointNamespace).Get(EtcdEndpointName)
+	etcdEndpoints, err := lister.Endpoints(EtcdEndpointNamespace).Get(EtcdEndpointName)
 	if errors.IsNotFound(err) {
 		recorder.Warningf("ObserveStorageFailed", "Required endpoints/%s in the %s namespace not found, falling back to default etcd service", EtcdEndpointName, EtcdEndpointNamespace)
 		return observedConfig, errs
