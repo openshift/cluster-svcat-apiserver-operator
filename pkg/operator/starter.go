@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/openshift/cluster-svcat-apiserver-operator/pkg/operator/configobservation/etcdobserver"
 	"github.com/openshift/cluster-svcat-apiserver-operator/pkg/operator/operatorclient"
 	"github.com/openshift/cluster-svcat-apiserver-operator/pkg/operator/resourcesynccontroller"
 	"github.com/openshift/cluster-svcat-apiserver-operator/pkg/operator/workloadcontroller"
@@ -57,6 +58,7 @@ func RunOperator(ctx context.Context, controllerCtx *controllercmd.ControllerCon
 		operatorclient.KubeAPIServerNamespaceName,
 		operatorclient.OperatorNamespace,
 		operatorclient.TargetNamespaceName,
+		etcdobserver.EtcdEndpointNamespace,
 	)
 	apiregistrationInformers := apiregistrationinformers.NewSharedInformerFactory(apiregistrationv1Client, 10*time.Minute)
 	configInformers := configinformers.NewSharedInformerFactory(configClient, 10*time.Minute)
