@@ -123,7 +123,7 @@ func (c ServiceCatalogAPIServerOperator) sync() error {
 			Type:    operatorsv1.OperatorStatusTypeUpgradeable,
 			Status:  operatorsv1.ConditionFalse,
 			Reason:  "Managed",
-			Message: "the apiserver is in a managed state, upgrades are not possible.",
+			Message: "The Service Catalog is deprecated, upgrades are not possible. Please visit this link for further details: https://docs.openshift.com/container-platform/4.4/applications/service_brokers/installing-service-catalog.html",
 		})
 	case operatorsv1.Unmanaged:
 		originalOperatorConfig := operatorConfig.DeepCopy()
@@ -131,25 +131,25 @@ func (c ServiceCatalogAPIServerOperator) sync() error {
 			Type:    operatorsv1.OperatorStatusTypeAvailable,
 			Status:  operatorsv1.ConditionUnknown,
 			Reason:  "Unmanaged",
-			Message: "the apiserver is in an unmanaged state, therefore its availability is unknown.",
+			Message: "The apiserver is in an unmanaged state, therefore its availability is unknown.",
 		})
 		v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorsv1.OperatorCondition{
 			Type:    operatorsv1.OperatorStatusTypeProgressing,
 			Status:  operatorsv1.ConditionFalse,
 			Reason:  "Unmanaged",
-			Message: "the apiserver is in an unmanaged state, therefore no changes are being applied.",
+			Message: "The apiserver is in an unmanaged state, therefore no changes are being applied.",
 		})
 		v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorsv1.OperatorCondition{
 			Type:    operatorsv1.OperatorStatusTypeDegraded,
 			Status:  operatorsv1.ConditionFalse,
 			Reason:  "Unmanaged",
-			Message: "the apiserver is in an unmanaged state, therefore no operator actions are degraded.",
+			Message: "The apiserver is in an unmanaged state, therefore no operator actions are degraded.",
 		})
 		v1helpers.SetOperatorCondition(&operatorConfig.Status.Conditions, operatorsv1.OperatorCondition{
 			Type:    operatorsv1.OperatorStatusTypeUpgradeable,
 			Status:  operatorsv1.ConditionTrue,
 			Reason:  "Unmanaged",
-			Message: "the apiserver is in an unmanaged state, upgrades are possible.",
+			Message: "The apiserver is in an unmanaged state, upgrades are possible.",
 		})
 
 		if !equality.Semantic.DeepEqual(operatorConfig.Status, originalOperatorConfig.Status) {
