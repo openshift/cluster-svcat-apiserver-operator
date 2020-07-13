@@ -8,6 +8,8 @@ import (
 	operatorclient "github.com/openshift/client-go/operator/clientset/versioned"
 	operatorv1 "github.com/openshift/client-go/operator/clientset/versioned/typed/operator/v1"
 	log "github.com/sirupsen/logrus"
+	apiextclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -45,6 +47,17 @@ func deleteCustomResource(client operatorv1.OperatorV1Interface) {
 		log.Errorf("ServiceCatalogAPIServer cr deletion failed: %v", err)
 	} else {
 		log.Info("ServiceCatalogAPIServer cr removed successfully.")
+	}
+}
+
+func deleteCustomResourceDefinitions(client *apiextclient.Clientset) {
+	log.Infof("Removing ServiceCatalogAPIServer CRD")
+	err := client.ApiextensionsV1().CustomResourceDefinitions().Delete(
+		"servicecatalogapiservers.operator.openshift.io", &metav1.DeleteOptions{})
+	if err != nil {
+		log.Errorf("ServiceCatalogAPIServer CRD deletion failed: %v", err)
+	} else {
+		log.Info("ServiceCatalogAPIServer CRD removed successfully.")
 	}
 }
 
@@ -92,6 +105,11 @@ func main() {
 		panic(err.Error())
 	}
 
+	apiextv1Client, err := apiextclient.NewForConfig(clientConfig)
+	if err != nil {
+		log.Errorf("problem getting apiextensions (crd) client, error %v", err)
+	}
+
 	operatorClient, err := operatorclient.NewForConfig(clientConfig)
 	if err != nil {
 		log.Errorf("problem getting operator client, error %v", err)
@@ -103,6 +121,7 @@ func main() {
 		deleteTargetNamespace(kubeClient, targetNamespaceName)
 		deleteClusterOperator(clientConfig)
 		deleteClusterRolesAndBindings(kubeClient)
+		deleteCustomResourceDefinitions(apiextv1Client)
 		os.Exit(0)
 	} else if err != nil {
 		log.Errorf("problem getting ServiceCatalogAPIServer CR, error %v", err)
@@ -118,12 +137,14 @@ func main() {
 		deleteCustomResource(operatorConfigClient)
 		deleteClusterOperator(clientConfig)
 		deleteClusterRolesAndBindings(kubeClient)
+		deleteCustomResourceDefinitions(apiextv1Client)
 	case operatorapiv1.Removed:
 		log.Info("ServiceCatalogAPIServer managementState is 'Removed'")
 		deleteTargetNamespace(kubeClient, targetNamespaceName)
 		deleteCustomResource(operatorConfigClient)
 		deleteClusterOperator(clientConfig)
 		deleteClusterRolesAndBindings(kubeClient)
+		deleteCustomResourceDefinitions(apiextv1Client)
 	default:
 		log.Error("Unknown managementState")
 	}
