@@ -23,3 +23,5 @@ require (
 	k8s.io/kube-aggregator v0.17.1
 	k8s.io/utils v0.0.0-20191114184206-e782cd3c129f
 )
+
+replace golang.org/x/text => golang.org/x/text v0.3.3
