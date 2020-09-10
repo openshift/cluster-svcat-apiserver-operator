@@ -1,7 +1,7 @@
 # cluster-svcat-apiserver-operator
 The cluster-svcat-apiserver-operator installs and maintains a singleton instance of the OpenShift Service Catalog on a cluster.  Service Catalog is actually comprised of an aggregated API server and a controller manager; this operator only deals with the API Server portion of Service Catalog.  See the [cluster-svcat-controller-manager-operator](https://github.com/openshift/cluster-svcat-controller-manager-operator) for the operator responsible for the controller manager component of Service Catalog.
 
-It should be noted this repo was initially copied from the OpenShift API Server Operator (https://github.com/openshift/cluster-openshift-apiserver-operator) and we generally try to keep it in sync with fixes and updates that are applicable.
+It should be noted this repo was initially copied from the [OpenShift API Server Operator](https://github.com/openshift/cluster-openshift-apiserver-operator) and we generally try to keep it in sync with fixes and updates that are applicable.
 
 [The Cluster Version Operator](https://github.com/openshift/cluster-version-operator) installs cluster operators by collecting the files within each cluster operator's manifest directory, bundling them into a release payload, and then `oc apply`ing them.  Note that unlike most cluster operators, this operator's configuration specifies that the initial management state of the Operator is `Removed`.  That is, the cluster operator is installed and running, but the operand is not.
 
