@@ -4,6 +4,7 @@ metadata:
   name: openshift-service-catalog-apiserver-remover
   namespace: openshift-service-catalog-removed
   annotations:
+    include.release.openshift.io/self-managed-high-availability: "true"
     release.openshift.io/create-only: "true"
 spec:
   template:
