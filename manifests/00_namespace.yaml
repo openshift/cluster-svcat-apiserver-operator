@@ -4,4 +4,5 @@ metadata:
   labels:
   name: openshift-service-catalog-removed
   annotations:
+    include.release.openshift.io/self-managed-high-availability: "true"
     openshift.io/node-selector: ""
